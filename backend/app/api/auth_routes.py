@@ -29,7 +29,7 @@ def signup():
             db.session.add(user)
             db.session.commit()
             login_user(user)
-            return jsonify({"message": "Signup successful", "user": user.username}), 200
+            return jsonify({"message": "Signup successful", "user": user.to_dict()}), 200
         except IntegrityError:
             db.session.rollback()
             return jsonify({"error": "Email already in use"}), 400
@@ -49,7 +49,7 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
-            return jsonify({"message": "Login successful", "user": user.username}), 200
+            return jsonify({"message": "Login successful", "user": user.to_dict()}), 200
         return jsonify({"error": "Invalid credentials"}), 401
     else:
         print("❌ Login form errors:", form.errors)

@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+db = SQLAlchemy()  # ✅ Define db here
 
-from .user import User  # ✅ Add this to expose User model
+# ✅ Import models *after* db is defined
+from .user import User
+from .message import Message

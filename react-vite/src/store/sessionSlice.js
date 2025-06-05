@@ -1,3 +1,5 @@
+// react-vite/src/store/sessionSlice.js
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "./axiosConfig";
 
@@ -21,7 +23,7 @@ export const thunkAuthenticate = createAsyncThunk("session/authenticate", async 
     const res = await axios.get("/auth/me");
     return res.data;
   } catch (err) {
-    return thunkAPI.rejectWithValue(null); // do nothing if not logged in
+    return thunkAPI.rejectWithValue(null);
   }
 });
 
@@ -43,7 +45,7 @@ const sessionSlice = createSlice({
         state.user = null;
       })
       .addCase(thunkAuthenticate.fulfilled, (state, action) => {
-        if (action.payload?.username) state.user = action.payload.username;
+        if (action.payload?.id) state.user = action.payload; // ✅ full object
       })
       .addCase(thunkAuthenticate.rejected, (state) => {
         state.user = null;
