@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { thunkSignup } from "../../store/sessionSlice";
+/*import { thunkSignup } from "../../store/sessionSlice"*/
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 

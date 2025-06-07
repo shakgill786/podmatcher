@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../store/axiosConfig"; // ✅ import your configured axios instance
 
 export default function PublicProfile() {
   const { id } = useParams();
@@ -9,36 +9,28 @@ export default function PublicProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return; // 🚫 prevent call if id is undefined
-  
+    if (!id) return;
+
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`/api/users/${id}`, {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("User not found");
-        const data = await res.json();
-        setUser(data);
+        const res = await axios.get(`/users/${id}`); // ✅ axios handles baseURL + cookies
+        setUser(res.data);
       } catch (err) {
         console.error("Error loading profile:", err);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchProfile();
   }, [id]);
 
   const handleSendMessage = async () => {
     try {
-      await axios.post(
-        "/api/messages",
-        {
-          receiver_id: user.id,
-          content: "Hey there! 👋 Let's connect!",
-        },
-        { withCredentials: true }
-      );
+      await axios.post("/messages", {
+        receiver_id: user.id,
+        content: "Hey there! 👋 Let's connect!",
+      });
       navigate(`/messages/${user.id}`);
     } catch (err) {
       console.error("Error sending message:", err);

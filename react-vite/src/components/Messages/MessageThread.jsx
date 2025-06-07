@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import axios from "../../store/axiosConfig"; // ✅ custom axios instance
 
 export default function MessageThread() {
   const { userId } = useParams();
@@ -12,12 +12,8 @@ export default function MessageThread() {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const res = await fetch(`/api/messages/${userId}`, {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Failed to fetch messages");
-        const data = await res.json();
-        setMessages(data);
+        const res = await axios.get(`/messages/${userId}`);
+        setMessages(res.data);
       } catch (err) {
         console.error("Error loading messages:", err);
       }
@@ -25,13 +21,8 @@ export default function MessageThread() {
 
     const loadRecipient = async () => {
       try {
-        const res = await fetch(`/api/users/${userId}`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setRecipient(data);
-        }
+        const res = await axios.get(`/users/${userId}`);
+        setRecipient(res.data);
       } catch (err) {
         console.error("Error loading recipient:", err);
       }
@@ -46,14 +37,10 @@ export default function MessageThread() {
     if (!newMessage.trim()) return;
 
     try {
-      const res = await axios.post(
-        "/api/messages",
-        {
-          receiver_id: parseInt(userId),
-          content: newMessage.trim(),
-        },
-        { withCredentials: true }
-      );
+      const res = await axios.post("/messages", {
+        receiver_id: parseInt(userId),
+        content: newMessage.trim(),
+      });
 
       setMessages((prev) => [...prev, res.data]);
       setNewMessage("");

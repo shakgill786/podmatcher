@@ -17,8 +17,8 @@ export default function LoginForm() {
     e.preventDefault();
     try {
       const res = await dispatch(thunkLogin(formData)).unwrap();
-      toast.success(`Welcome back, ${res.user}! 👋`);
-      navigate("/dashboard");
+      toast.success(`Welcome back, ${res.user.username}! 👋`);
+      setTimeout(() => navigate("/dashboard"), 300);
     } catch (err) {
       toast.error(err?.error || err?.errors?.email?.[0] || "Login failed");
     }
@@ -29,8 +29,9 @@ export default function LoginForm() {
   }, [user]);
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow w-80">
-      <h2 className="text-xl mb-4 text-center">Login</h2>
+    <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow w-80 mx-auto mt-20">
+      <h2 className="text-xl mb-4 text-center font-semibold text-gray-700">Login</h2>
+
       {["email", "password"].map((field) => (
         <input
           key={field}
@@ -39,10 +40,17 @@ export default function LoginForm() {
           placeholder={field}
           value={formData[field]}
           onChange={handleChange}
-          className="mb-2 p-2 border w-full"
+          className="mb-3 p-2 border w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          autoComplete={field === "password" ? "current-password" : "email"}
+          required
         />
       ))}
-      <button className="bg-green-600 text-white px-4 py-2 rounded w-full">
+
+      <button
+        type="submit"
+        disabled={formData.email.length < 4 || formData.password.length < 6}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full transition"
+      >
         Login
       </button>
     </form>
