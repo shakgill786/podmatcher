@@ -3,17 +3,17 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "../../store/axiosConfig"; // ✅ import your configured axios instance
 
 export default function PublicProfile() {
-  const { id } = useParams();
+  const { userId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!userId) return;
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`/users/${id}`); // ✅ axios handles baseURL + cookies
+        const res = await axios.get(`/users/${userId}`); // ✅ axios handles baseURL + cookies
         setUser(res.data);
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -23,7 +23,7 @@ export default function PublicProfile() {
     };
 
     fetchProfile();
-  }, [id]);
+  }, [userId]);
 
   const handleSendMessage = async () => {
     try {
@@ -31,7 +31,7 @@ export default function PublicProfile() {
         receiver_id: user.id,
         content: "Hey there! 👋 Let's connect!",
       });
-      navigate(`/messages/${user.id}`);
+      navigate(`/messages/${userId}`);
     } catch (err) {
       console.error("Error sending message:", err);
       alert("❌ Failed to send message.");

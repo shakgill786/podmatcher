@@ -74,6 +74,7 @@ def logout():
 # ✅ WHO AM I
 @auth_routes.route("/me", methods=["GET"])
 def authenticate():
+    print("🍪 Cookies Received:", dict(request.cookies))
     print("Session check ➜", current_user.is_authenticated, current_user.get_id())
     if current_user.is_authenticated:
         return jsonify(current_user.to_dict()), 200
