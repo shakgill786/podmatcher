@@ -1,13 +1,14 @@
-// react-vite/src/components/Profile/ProfileEditor.jsx
-
 import { useState, useEffect } from "react";
-import axios from "../../store/axiosConfig"; // ✅ use your custom axios instance
+import axios from "../../store/axiosConfig";
 import AudioUploader from "./AudioUploader";
+import { getCSRFToken } from "../../utils/csrf";
 
 export default function ProfileEditor() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [interests, setInterests] = useState("");
+  const [category, setCategory] = useState("");
+  const [role, setRole] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
 
   useEffect(() => {
@@ -18,11 +19,13 @@ export default function ProfileEditor() {
         setUsername(data.username || "");
         setBio(data.bio || "");
         setInterests(data.interests || "");
+        setCategory(data.category || "");
+        setRole(data.role || "");
         if (data.audio_file) {
           setAudioUrl(`/static/audio_snippets/${data.audio_file}`);
         }
       } catch (err) {
-        console.error("Failed to load profile:", err);
+        console.error("❌ Failed to load profile:", err);
       }
     };
     loadProfile();
@@ -36,18 +39,29 @@ export default function ProfileEditor() {
       const res = await axios.post("/audio/upload", formData);
       setAudioUrl(`/static/audio_snippets/${res.data.filename}`);
     } catch (err) {
-      console.error("Audio upload failed:", err);
+      console.error("❌ Audio upload failed:", err);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const csrfToken = getCSRFToken();
+    const payload = { username, bio, interests, category, role };
+
+    console.log("📤 Sending profile update payload:", payload);
+    console.log("💡 CSRF Token being sent:", csrfToken);
+
     try {
-      await axios.put("/users/me", { username, bio, interests });
+      await axios.put("/users/me", payload, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+      });
       alert("✅ Profile updated!");
     } catch (err) {
-      console.error("Failed to update profile:", err);
+      console.error("❌ Failed to update profile:", err.response?.data || err.message);
       alert("❌ Failed to save changes.");
     }
   };
@@ -76,6 +90,25 @@ export default function ProfileEditor() {
           className="border p-2 w-full mb-4"
           value={interests}
           onChange={(e) => setInterests(e.target.value)}
+        />
+
+        <label className="block font-semibold">Role</label>
+        <select
+          className="border p-2 w-full mb-4"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
+          <option value="">Select role</option>
+          <option value="host">Host</option>
+          <option value="guest">Guest</option>
+        </select>
+
+        <label className="block font-semibold">Category</label>
+        <input
+          type="text"
+          className="border p-2 w-full mb-4"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
         />
 
         <AudioUploader onUpload={handleAudioUpload} />

@@ -1,3 +1,5 @@
+// react-vite/src/main.jsx
+
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Provider, useDispatch } from "react-redux";
@@ -21,26 +23,24 @@ function AuthLoader({ children }) {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        // 1. 🛡️ Fetch CSRF token and set cookie
-        await fetch("/api/csrf/restore", {
+        // 1️⃣ Restore CSRF token cookie
+        await fetch("http://localhost:5000/api/csrf/restore", {
           credentials: "include",
         });
 
-        // 2. 🔐 Try to restore session
+        // 2️⃣ Try to authenticate (may or may not succeed depending on session)
         await dispatch(thunkAuthenticate());
-
       } catch (err) {
-        console.warn("Auto-login failed:", err);
+        console.warn("⚠️ Auth load failed:", err);
       } finally {
-        setLoaded(true); // ✅ Only show app after auth attempt
+        setLoaded(true);
       }
     };
 
     restoreSession();
   }, [dispatch]);
 
-  // Show a loading screen until auth check is done
-  if (!loaded) return <div className="text-center mt-20 text-gray-600">Loading...</div>;
+  if (!loaded) return <div className="text-center mt-20 text-gray-500">Loading...</div>;
 
   return children;
 }

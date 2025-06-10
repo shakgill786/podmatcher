@@ -4,10 +4,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '127.0.0.1', // ✅ Force IPv4 instead of ::1
+    host: 'localhost', // ✅ Match backend cookie domain
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5000', // ✅ Match Flask host exactly
+        target: 'http://localhost:5000', // ✅ MUST match Flask's host for sessions to work
         changeOrigin: true,
       },
     },

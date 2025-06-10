@@ -1,3 +1,5 @@
+// react-vite/src/App.jsx
+
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
@@ -23,17 +25,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <Routes>
-        {/* Root Redirect */}
-        <Route
-          path="/"
-          element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-        />
-
-        {/* Public Auth Routes */}
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
         <Route path="/signup" element={<SignupForm />} />
         <Route path="/login" element={<LoginForm />} />
-
-        {/* Protected Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -66,20 +60,8 @@ export default function App() {
             )
           }
         />
-
-        {/* Profile Editor */}
-        <Route
-          path="/edit-profile"
-          element={user ? <EditProfile /> : <Navigate to="/login" />}
-        />
-
-        {/* Message Thread */}
-        <Route
-          path="/messages/:userId"
-          element={user ? <MessageThread /> : <Navigate to="/login" />}
-        />
-
-        {/* Public Profile */}
+        <Route path="/edit-profile" element={user ? <EditProfile /> : <Navigate to="/login" />} />
+        <Route path="/messages/:userId" element={user ? <MessageThread /> : <Navigate to="/login" />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
       </Routes>
     </div>
