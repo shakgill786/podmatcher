@@ -1,5 +1,3 @@
-# backend/app/__init__.py
-
 from flask import Flask
 from flask_cors import CORS
 from flask_session import Session
@@ -22,9 +20,9 @@ def create_app():
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_PERMANENT'] = False
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_SECURE'] = False  # ❗ False for localhost
+    app.config['SESSION_COOKIE_SECURE'] = False
     app.config['REMEMBER_COOKIE_SECURE'] = False
-    app.config['WTF_CSRF_CHECK_DEFAULT'] = False  # Manually handled
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
 
     # 🔌 Init
@@ -40,7 +38,7 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # 🌐 CORS for frontend
+    # 🌐 CORS
     CORS(app, supports_credentials=True, origins=[
         "http://localhost:5173", "http://127.0.0.1:5173"
     ])
@@ -55,5 +53,9 @@ def create_app():
     app.register_blueprint(user_routes, url_prefix="/api/users")
     app.register_blueprint(message_routes, url_prefix="/api/messages")
     app.register_blueprint(csrf_routes, url_prefix="/api")
+
+    # ✅ Seed CLI
+    from app.seeds.seed_commands import seed_commands
+    app.cli.add_command(seed_commands)
 
     return app

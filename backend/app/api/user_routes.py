@@ -61,3 +61,10 @@ def get_user_by_id(user_id):
         "category": user.category,
         "role": user.role
     }), 200
+
+# 🧑‍🤝‍🧑 GET all users except current
+@user_routes.route("/", methods=["GET"])
+@login_required
+def get_all_users():
+    users = User.query.filter(User.id != current_user.id).all()
+    return jsonify([user.to_dict() for user in users])
