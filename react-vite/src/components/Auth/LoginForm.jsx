@@ -17,7 +17,7 @@ export default function LoginForm() {
     e.preventDefault();
     try {
       const res = await dispatch(thunkLogin(formData)).unwrap();
-      toast.success(`Welcome back, ${res.user.username}! 👋`);
+      toast.success(`Welcome back, ${res.username}! 👋`);
       setTimeout(() => navigate("/dashboard"), 300);
     } catch (err) {
       toast.error(err?.error || err?.errors?.email?.[0] || "Login failed");

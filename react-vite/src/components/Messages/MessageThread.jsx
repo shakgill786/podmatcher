@@ -1,6 +1,8 @@
+// react-vite/src/components/Messages/MessageThread.jsx
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "../../store/axiosConfig"; // ✅ custom axios instance
+import axios from "../../store/axiosConfig";
 
 export default function MessageThread() {
   const { userId } = useParams();
@@ -8,9 +10,9 @@ export default function MessageThread() {
   const [newMessage, setNewMessage] = useState("");
   const [recipient, setRecipient] = useState(null);
 
-  // Load message history
+  // load messages
   useEffect(() => {
-    const loadMessages = async () => {
+    const fetchMessages = async () => {
       try {
         const res = await axios.get(`/messages/${userId}`);
         setMessages(res.data);
@@ -19,7 +21,7 @@ export default function MessageThread() {
       }
     };
 
-    const loadRecipient = async () => {
+    const fetchRecipient = async () => {
       try {
         const res = await axios.get(`/users/${userId}`);
         setRecipient(res.data);
@@ -28,20 +30,21 @@ export default function MessageThread() {
       }
     };
 
-    loadMessages();
-    loadRecipient();
+    fetchMessages();
+    fetchRecipient();
   }, [userId]);
 
-  // Handle sending message
+  // send a new message
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+    const text = newMessage.trim();
+    if (!text) return;
 
     try {
-      const res = await axios.post("/messages", {
-        receiver_id: parseInt(userId),
-        content: newMessage.trim(),
-      });
-
+      const payload = {
+        recipient_id: parseInt(userId, 10),
+        body: text,
+      };
+      const res = await axios.post("/messages", payload);
       setMessages((prev) => [...prev, res.data]);
       setNewMessage("");
     } catch (err) {
@@ -59,23 +62,24 @@ export default function MessageThread() {
         {messages.length === 0 ? (
           <p className="text-gray-500 italic">No messages yet.</p>
         ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-3 p-2 rounded ${
-                msg.from === recipient?.username
-                  ? "bg-gray-200 text-left"
-                  : "bg-blue-200 text-right"
-              }`}
-            >
-              <div className="text-sm">
-                <strong>{msg.from}</strong>: {msg.content}
+          messages.map((msg) => {
+            const isIncoming = msg.from === recipient?.username;
+            return (
+              <div
+                key={msg.id}
+                className={`mb-3 p-2 rounded ${
+                  isIncoming ? "bg-gray-200 text-left" : "bg-blue-200 text-right"
+                }`}
+              >
+                <div className="text-sm">
+                  <strong>{msg.from}</strong>: {msg.body}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {new Date(msg.timestamp).toLocaleString()}
+                </div>
               </div>
-              <div className="text-xs text-gray-500">
-                {new Date(msg.timestamp).toLocaleString()}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

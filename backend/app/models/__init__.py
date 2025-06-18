@@ -1,7 +1,9 @@
+# backend/app/models/__init__.py
+
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()  # ✅ Define db here
+db = SQLAlchemy()
 
-# ✅ Import models *after* db is defined
+# import all models so db.create_all() and migrations see them
 from .user import User
 from .message import Message

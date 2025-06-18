@@ -1,89 +1,84 @@
-import { useEffect, useState } from "react";
+// react-vite/src/components/Profile/PublicProfile.jsx
+
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "../../store/axiosConfig"; // ✅ import your configured axios instance
+import axios from "../../store/axiosConfig";
+import { toast } from "react-hot-toast";
 
 export default function PublicProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
-
-    const fetchProfile = async () => {
+    const load = async () => {
       try {
-        const res = await axios.get(`/users/${userId}`); // ✅ axios handles baseURL + cookies
-        setUser(res.data);
+        const res = await axios.get(`/users/${userId}`);
+        setProfile(res.data);
       } catch (err) {
-        console.error("Error loading profile:", err);
+        console.error("❌ Error loading profile:", err);
+        toast.error("Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchProfile();
+    load();
   }, [userId]);
 
   const handleSendMessage = async () => {
     try {
       await axios.post("/messages", {
-        receiver_id: user.id,
-        content: "Hey there! 👋 Let's connect!",
+        recipient_id: profile.id,
+        body: "Hey there! 👋 Let's connect!",
       });
+      toast.success("Message sent!");
       navigate(`/messages/${userId}`);
     } catch (err) {
-      console.error("Error sending message:", err);
-      alert("❌ Failed to send message.");
+      console.error("❌ Error sending message:", err);
+      toast.error("Failed to send message");
     }
   };
 
-  if (loading)
-    return <div className="text-center mt-10 text-blue-600">Loading profile...</div>;
-
-  if (!user)
-    return <div className="text-center mt-10 text-red-600">User not found</div>;
+  if (loading) return <div className="text-center mt-10 text-blue-600">Loading profile...</div>;
+  if (!profile) return <div className="text-center mt-10 text-red-600">User not found</div>;
 
   return (
-    <div className="max-w-xl w-full mx-auto mt-10 p-6 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 text-gray-800">
+    <div className="max-w-xl mx-auto mt-10 p-6 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200">
       <h1 className="text-3xl font-bold text-center mb-6 text-indigo-700">
-        🎧 {user.username}'s Public PodMatcher Profile
+        🎧 {profile.username}'s Public Profile
       </h1>
 
-      <p className="mb-3"><strong>🧠 Bio:</strong> {user.bio || "No bio yet."}</p>
-      <p className="mb-3"><strong>🎯 Interests:</strong> {user.interests || "No interests added."}</p>
-      <p className="mb-3"><strong>🎙️ Role:</strong> {user.role}</p>
-      <p className="mb-6"><strong>📚 Category:</strong> {user.category || "N/A"}</p>
+      <p className="mb-3"><strong>🧠 Bio:</strong> {profile.bio || "No bio yet."}</p>
+      <p className="mb-3"><strong>🎯 Interests:</strong> {profile.interests || "No interests yet."}</p>
+      <p className="mb-3"><strong>🎙️ Role:</strong> {profile.role}</p>
+      <p className="mb-6"><strong>📚 Category:</strong> {profile.category || "N/A"}</p>
 
-      {user.audio_file ? (
+      {profile.audio_file ? (
         <div className="mb-6">
           <p className="font-semibold">🎧 Audio Preview:</p>
-          <audio controls src={`/static/audio_snippets/${user.audio_file}`} className="mt-2 w-full" />
+          <audio
+            controls
+            className="mt-2 w-full"
+            src={`/static/audio_snippets/${profile.audio_file}`}
+          />
         </div>
       ) : (
         <p className="italic text-gray-500 mb-6">
-          🎵 No intro audio yet. Maybe they’re shy... or just mysterious!
+          🎵 No intro audio yet.
         </p>
       )}
 
       <button
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mb-4"
         onClick={handleSendMessage}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mb-4"
       >
         💬 Message this User
       </button>
 
-      <div className="bg-gray-50 p-4 rounded border text-sm text-gray-700">
-        <p>🏅 Badges: <em>Coming soon</em></p>
-        <p>👥 Followers: <em>0</em></p>
-        <p>📅 Schedule: <em>Calendar feature coming soon!</em></p>
-      </div>
-
-      <div className="text-center mt-6">
-        <Link
-          to="/dashboard"
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
+      <div className="text-center">
+        <Link to="/dashboard" className="text-blue-600 hover:underline">
           ← Back to Dashboard
         </Link>
       </div>

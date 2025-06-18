@@ -1,52 +1,77 @@
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.models import db, Message, User
 
 message_routes = Blueprint("messages", __name__)
 
-# Preflight handler for CORS
-@message_routes.route("/", methods=["OPTIONS"])
-def handle_options():
-    response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "POST")
-    return response
-
-# Get message thread with another user
-@message_routes.route("/<int:user_id>")
+@message_routes.route("/<int:user_id>", methods=["GET"])
 @login_required
-def get_messages(user_id):
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
-        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.timestamp).all()
+def get_thread(user_id):
+    try:
+        thread = Message.query.filter(
+            ((Message.sender_id    == current_user.id) & (Message.recipient_id == user_id)) |
+            ((Message.sender_id    == user_id)       & (Message.recipient_id == current_user.id))
+        ).order_by(Message.created_at).all()
+        return jsonify([m.to_dict() for m in thread]), 200
 
-    return jsonify([{
-        "id": msg.id,
-        "from": msg.sender.username,
-        "to": msg.receiver.username,
-        "content": msg.content,
-        "timestamp": msg.timestamp.isoformat()
-    } for msg in messages])
+    except Exception:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Server error loading thread"}), 500
 
-# Send a message
-@message_routes.route("/", methods=["POST"])
+@message_routes.route("", methods=["POST"])
 @login_required
-def send_message():
-    data = request.json
-    new_msg = Message(
-        sender_id=current_user.id,
-        receiver_id=data["receiver_id"],
-        content=data["content"]
-    )
-    db.session.add(new_msg)
-    db.session.commit()
-    return jsonify({
-        "id": new_msg.id,
-        "from": current_user.username,
-        "to": User.query.get(data["receiver_id"]).username,
-        "content": new_msg.content,
-        "timestamp": new_msg.timestamp.isoformat()
-    })
+def post_message():
+    try:
+        data         = request.get_json(force=True) or {}
+        recipient_id = data.get("recipient_id")
+        body         = data.get("body")
+
+        if not recipient_id or not body:
+            return jsonify({"error": "Missing recipient_id or body"}), 400
+
+        msg = Message(
+            sender_id    = current_user.id,
+            recipient_id = recipient_id,
+            body         = body
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify(msg.to_dict()), 201
+
+    except Exception:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Server error sending message"}), 500
+
+@message_routes.route("", methods=["GET"])
+@login_required
+def get_inbox():
+    try:
+        # grab all messages involving me, newest first
+        msgs = Message.query.filter(
+            (Message.sender_id    == current_user.id) |
+            (Message.recipient_id == current_user.id)
+        ).order_by(Message.created_at.desc()).all()
+
+        # pick one latest message per conversation partner
+        threads = {}
+        for m in msgs:
+            partner_id = m.recipient_id if m.sender_id == current_user.id else m.sender_id
+            if partner_id not in threads:
+                threads[partner_id] = m
+
+        # build a simple JSON for each thread
+        out = []
+        for pid, msg in threads.items():
+            user = User.query.get(pid)
+            out.append({
+                "user_id":      pid,
+                "username":     user.username,
+                "last_message": msg.body,
+                "timestamp":    msg.created_at.isoformat()
+            })
+
+        return jsonify(out), 200
+
+    except Exception:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Server error loading inbox"}), 500
