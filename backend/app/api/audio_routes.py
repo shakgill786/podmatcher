@@ -1,38 +1,53 @@
-# app/api/audio_routes.py
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+# backend/app/api/audio_routes.py
+
 import os
+import time
+from flask import Blueprint, request, jsonify, current_app
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from app.models import db
 
 audio_routes = Blueprint("audio", __name__)
 
-UPLOAD_FOLDER = 'static/audio_snippets'
-ALLOWED_EXTENSIONS = {'mp3', 'wav', 'm4a'}
+ALLOWED_EXTENSIONS = {"mp3", "wav", "m4a", "webm"}
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @audio_routes.route("/upload", methods=["POST"])
 @login_required
 def upload_audio():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
+    file = request.files.get("file")
+    if not file or file.filename == "":
+        return jsonify({"error": "No file provided"}), 400
 
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(f"user_{current_user.id}_{file.filename}")
-        path = os.path.join(UPLOAD_FOLDER, filename)
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        file.save(path)
+    # build safe filename with timestamp
+    fname = secure_filename(f"user_{current_user.id}_{int(time.time())}_{file.filename}")
+    upload_folder = os.path.join(current_app.root_path, "static", "audio_snippets")
+    os.makedirs(upload_folder, exist_ok=True)
+    filepath = os.path.join(upload_folder, fname)
+    file.save(filepath)
 
-        # Save filename to user model if needed
-        current_user.audio_file = filename
-        from app.models import db
-        db.session.commit()
+    # update user model
+    current_user.audio_file = fname
+    db.session.commit()
 
-        return jsonify({"filename": filename}), 200
+    return jsonify({"filename": fname}), 200
 
-    return jsonify({"error": "Invalid file type"}), 400
+@audio_routes.route("/upload", methods=["DELETE"])
+@login_required
+def delete_audio():
+    fname = current_user.audio_file
+    if not fname:
+        return jsonify({"error": "No snippet to delete"}), 404
+
+    path = os.path.join(current_app.root_path, "static", "audio_snippets", fname)
+    if os.path.exists(path):
+        os.remove(path)
+
+    current_user.audio_file = None
+    db.session.commit()
+    return jsonify({"message": "Deleted"}), 200

@@ -7,31 +7,30 @@ import { toast } from "react-hot-toast";
 
 export default function PublicProfile() {
   const { userId } = useParams();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
-    const load = async () => {
+    (async () => {
       try {
-        const res = await axios.get(`/users/${userId}`);
-        setProfile(res.data);
+        const { data } = await axios.get(`/users/${userId}`);
+        setProfile(data);
       } catch (err) {
         console.error("❌ Error loading profile:", err);
         toast.error("Failed to load profile");
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    })();
   }, [userId]);
 
   const handleSendMessage = async () => {
     try {
       await axios.post("/messages", {
         recipient_id: profile.id,
-        body: "Hey there! 👋 Let's connect!",
+        body:         "Hey there! 👋 Let's connect!",
       });
       toast.success("Message sent!");
       navigate(`/messages/${userId}`);
@@ -50,18 +49,18 @@ export default function PublicProfile() {
         🎧 {profile.username}'s Public Profile
       </h1>
 
-      <p className="mb-3"><strong>🧠 Bio:</strong> {profile.bio || "No bio yet."}</p>
+      <p className="mb-3"><strong>🧠 Bio:</strong> {profile.bio       || "No bio yet."}</p>
       <p className="mb-3"><strong>🎯 Interests:</strong> {profile.interests || "No interests yet."}</p>
       <p className="mb-3"><strong>🎙️ Role:</strong> {profile.role}</p>
       <p className="mb-6"><strong>📚 Category:</strong> {profile.category || "N/A"}</p>
 
-      {profile.audio_file ? (
+      {profile.audio_url ? (
         <div className="mb-6">
           <p className="font-semibold">🎧 Audio Preview:</p>
           <audio
             controls
             className="mt-2 w-full"
-            src={`/static/audio_snippets/${profile.audio_file}`}
+            src={profile.audio_url}
           />
         </div>
       ) : (

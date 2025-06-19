@@ -1,43 +1,44 @@
-import { useState, useRef } from "react";
-import WaveSurfer from "wavesurfer.js";
+// react-vite/src/components/Profile/AudioUploader.jsx
 
-export default function AudioUploader({ onUpload }) {
-  const [audioBlob, setAudioBlob] = useState(null);
+import { useState, useRef, useEffect } from "react";
+import axios from "../../store/axiosConfig";
+import { getCSRFToken } from "../../utils/csrf";
+
+export default function AudioUploader({
+  initialUrl,
+  onUploadSuccess,
+  onDeleteSuccess,
+}) {
   const [recording, setRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [blobUrl, setBlobUrl] = useState(initialUrl || null);
+  const [mediaRecorder, setMR] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const waveformRef = useRef(null);
-  const wavesurferRef = useRef(null);
+  const chunksRef = useRef([]);
 
-  const maxSizeMB = 2;
+  // 🔄 Sync internal blobUrl whenever the parent-provided URL changes
+  useEffect(() => {
+    setBlobUrl(initialUrl || null);
+  }, [initialUrl]);
 
   const startRecording = async () => {
+    setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks = [];
-
-      recorder.ondataavailable = (e) => chunks.push(e.data);
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-
-        if (blob.size / (1024 * 1024) > maxSizeMB) {
-          setError("❌ File too large (max 2MB)");
-          return;
-        }
-
-        setAudioBlob(blob);
-        onUpload(new File([blob], "recorded_audio.webm"));
-        loadWaveform(blob);
+      const mr = new MediaRecorder(stream);
+      mr.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setBlobUrl(url);
+        chunksRef.current = [];
       };
-
-      recorder.start();
-      setMediaRecorder(recorder);
+      mr.start();
+      setMR(mr);
       setRecording(true);
-      setError("");
     } catch (err) {
       console.error("Mic error:", err);
-      setError("Microphone permission denied or unavailable.");
+      setError("Microphone unavailable or permission denied.");
     }
   };
 
@@ -46,87 +47,124 @@ export default function AudioUploader({ onUpload }) {
     setRecording(false);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("audio/")) {
-      setError("❌ Only audio files are allowed.");
-      return;
-    }
-
-    if (file.size / (1024 * 1024) > maxSizeMB) {
-      setError("❌ File too large (max 2MB).");
-      return;
-    }
-
-    setAudioBlob(file);
-    onUpload(file);
-    loadWaveform(file);
+  const upload = async () => {
+    setUploading(true);
     setError("");
+    try {
+      // grab the blob back out of the URL
+      const blob = await fetch(blobUrl).then((r) => r.blob());
+      const form = new FormData();
+      form.append("file", blob, "snippet.webm");
+
+      const csrf = getCSRFToken();
+      const res = await axios.post("/audio/upload", form, {
+        headers: { "X-CSRFToken": csrf },
+      });
+
+      const publicUrl = `/static/audio_snippets/${res.data.filename}`;
+      onUploadSuccess(publicUrl);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setError("Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const loadWaveform = (blob) => {
-    if (!waveformRef.current) return;
+  const deleteSnippet = async () => {
+    setUploading(true);
+    setError("");
+    try {
+      await axios.delete("/audio/upload", {
+        headers: { "X-CSRFToken": getCSRFToken() },
+      });
 
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
+      // clear local and parent state
+      setBlobUrl(null);
+      onDeleteSuccess();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setError("Delete failed");
+    } finally {
+      setUploading(false);
     }
-
-    const ws = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: "#60a5fa",
-      progressColor: "#1d4ed8",
-      height: 60,
-    });
-
-    ws.loadBlob(blob);
-    wavesurferRef.current = ws;
   };
 
   return (
-    <div className="mb-4 border rounded-md p-4 bg-blue-50 shadow-sm">
-      <label className="block font-bold mb-2 text-blue-800">🎙️ Intro Audio</label>
-
-      <div className="flex items-center gap-4 mb-3">
-        {!recording ? (
+    <div className="mb-4">
+      <div className="flex items-center gap-2">
+        {!blobUrl && !recording && (
           <button
-            type="button"
             onClick={startRecording}
-            className="px-3 py-1 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-green-500 text-white rounded"
           >
-            🎤 Start Recording
+            🎤 Record
           </button>
-        ) : (
+        )}
+        {recording && (
           <button
-            type="button"
             onClick={stopRecording}
-            className="px-3 py-1 bg-red-500 text-white rounded"
+            className="px-4 py-2 bg-red-500 text-white rounded"
           >
             ⏹ Stop
           </button>
         )}
-
-        <label className="cursor-pointer px-3 py-1 bg-gray-200 text-sm rounded">
-          📁 Upload
-          <input
-            type="file"
-            accept="audio/*"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-        </label>
+        {blobUrl && !uploading && (
+          <>
+            <button
+              onClick={upload}
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => {
+                URL.revokeObjectURL(blobUrl);
+                setBlobUrl(null);
+              }}
+              className="px-4 py-2 bg-yellow-500 text-white rounded"
+            >
+              Re-record
+            </button>
+            <button
+              onClick={deleteSnippet}
+              className="px-4 py-2 bg-gray-400 text-white rounded"
+            >
+              Delete
+            </button>
+          </>
+        )}
+        {uploading && (
+          <div className="flex items-center">
+            <div className="loader mr-2" />
+            Uploading…
+          </div>
+        )}
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-
-      <div ref={waveformRef} className="bg-gray-100 rounded-md overflow-hidden h-[60px]" />
-
-      {audioBlob && (
+      {blobUrl && (
         <div className="mt-2">
-          <audio controls src={URL.createObjectURL(audioBlob)} />
+          <audio controls src={blobUrl} className="w-full" />
         </div>
       )}
+
+      {error && <p className="text-red-600 mt-1">{error}</p>}
+
+      {/* spinner CSS */}
+      <style>{`
+        .loader {
+          border: 3px solid #f3f3f3;
+          border-top: 3px solid #3498db;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 
+          0% { transform: rotate(0); } 
+          100% { transform: rotate(360deg); } 
+        }
+      `}</style>
     </div>
   );
 }

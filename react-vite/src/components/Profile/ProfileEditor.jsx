@@ -1,3 +1,5 @@
+// react-vite/src/components/Profile/ProfileEditor.jsx
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../store/axiosConfig";
@@ -6,109 +8,140 @@ import { getCSRFToken } from "../../utils/csrf";
 import { toast } from "react-hot-toast";
 
 export default function ProfileEditor() {
-  const [username, setUsername] = useState("");
-  const [bio, setBio] = useState("");
+  const [username, setUsername]   = useState("");
+  const [bio, setBio]             = useState("");
   const [interests, setInterests] = useState("");
-  const [category, setCategory] = useState("");
-  const [role, setRole] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
+  const [category, setCategory]   = useState("");
+  const [role, setRole]           = useState("");
+  const [audioUrl, setAudioUrl]   = useState(null);
   const navigate = useNavigate();
 
+  // 1️⃣ Load the profile (including the fully-qualified audio_url)
   useEffect(() => {
-    const loadProfile = async () => {
+    (async () => {
       try {
-        const res = await axios.get("/users/me");
-        const data = res.data;
+        const { data } = await axios.get("/users/me");
         setUsername(data.username || "");
         setBio(data.bio || "");
         setInterests(data.interests || "");
         setCategory(data.category || "");
         setRole(data.role || "");
-        if (data.audio_file) {
-          setAudioUrl(`/static/audio_snippets/${data.audio_file}`);
-        }
+        // ← use the audio_url field your backend now sends
+        setAudioUrl(data.audio_url || null);
       } catch (err) {
         console.error("❌ Failed to load profile:", err);
         toast.error("Failed to load profile.");
       }
-    };
-    loadProfile();
+    })();
   }, []);
 
-  const handleAudioUpload = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await axios.post("/audio/upload", formData);
-      setAudioUrl(`/static/audio_snippets/${res.data.filename}`);
-    } catch (err) {
-      console.error("❌ Audio upload failed:", err);
-      toast.error("Audio upload failed.");
-    }
+  // 2️⃣ Callbacks from the uploader
+  const handleAudioUpload = (url) => {
+    setAudioUrl(url);
+    toast.success("Audio uploaded!");
+  };
+  const handleAudioDelete = () => {
+    setAudioUrl(null);
+    toast.success("Audio deleted.");
   };
 
+  // 3️⃣ Save the rest of the profile
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const csrfToken = getCSRFToken();
-    const payload = { username, bio, interests, category, role };
-
     try {
-      await axios.put("/users/me", payload, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-      });
-      toast.success("✅ Profile updated!");
+      const csrf = getCSRFToken();
+      await axios.put(
+        "/users/me",
+        { username, bio, interests, category, role },
+        { headers: { "X-CSRFToken": csrf, "Content-Type": "application/json" } }
+      );
+      toast.success("Profile updated!");
     } catch (err) {
-      console.error("❌ Failed to update profile:", err.response?.data || err.message);
-      toast.error("❌ Failed to save changes.");
+      console.error("❌ Failed to save profile:", err);
+      toast.error("Failed to save profile.");
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md mt-10">
+    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-10">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Edit Your Profile</h2>
+        <h2 className="text-2xl font-bold">Edit Profile</h2>
         <button
           onClick={() => navigate("/dashboard")}
-          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition"
+          className="px-3 py-1 bg-gray-200 rounded"
         >
-          🔙 Back to Dashboard
+          ← Dashboard
         </button>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <label className="block font-semibold">Username</label>
-        <input type="text" className="border p-2 w-full mb-4" value={username} onChange={(e) => setUsername(e.target.value)} />
+        {/* Username, Bio, Interests, Role, Category */}
+        {[
+          { label: "Username", value: username, setter: setUsername, type: "text" },
+          { label: "Bio",      value: bio,      setter: setBio,      type: "textarea" },
+          { label: "Interests",value: interests,setter: setInterests,type: "textarea" },
+        ].map(({ label, value, setter, type }) => (
+          <div key={label} className="mb-4">
+            <label className="block font-semibold">{label}</label>
+            {type === "textarea" ? (
+              <textarea
+                value={value}
+                onChange={e => setter(e.target.value)}
+                className="border p-2 w-full"
+              />
+            ) : (
+              <input
+                type="text"
+                value={value}
+                onChange={e => setter(e.target.value)}
+                className="border p-2 w-full"
+              />
+            )}
+          </div>
+        ))}
 
-        <label className="block font-semibold">Bio</label>
-        <textarea className="border p-2 w-full mb-4" value={bio} onChange={(e) => setBio(e.target.value)} />
+        <div className="mb-4">
+          <label className="block font-semibold">Role</label>
+          <select
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            className="border p-2 w-full"
+          >
+            <option value="">Select role</option>
+            <option value="host">Host</option>
+            <option value="guest">Guest</option>
+          </select>
+        </div>
 
-        <label className="block font-semibold">Interests</label>
-        <textarea className="border p-2 w-full mb-4" value={interests} onChange={(e) => setInterests(e.target.value)} />
+        <div className="mb-4">
+          <label className="block font-semibold">Category</label>
+          <input
+            type="text"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
 
-        <label className="block font-semibold">Role</label>
-        <select className="border p-2 w-full mb-4" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">Select role</option>
-          <option value="host">Host</option>
-          <option value="guest">Guest</option>
-        </select>
+        {/* 4️⃣ Audio uploader always shows up */}
+        <AudioUploader
+          initialUrl={audioUrl}
+          onUploadSuccess={handleAudioUpload}
+          onDeleteSuccess={handleAudioDelete}
+        />
 
-        <label className="block font-semibold">Category</label>
-        <input type="text" className="border p-2 w-full mb-4" value={category} onChange={(e) => setCategory(e.target.value)} />
-
-        <AudioUploader onUpload={handleAudioUpload} />
-
+        {/* 5️⃣ Preview if we have one */}
         {audioUrl && (
           <div className="mt-4">
-            <p className="font-semibold mb-1">🎧 Preview Audio Snippet:</p>
-            <audio controls src={audioUrl}></audio>
+            <p className="font-semibold">Preview:</p>
+            <audio controls src={audioUrl} className="w-full" />
           </div>
         )}
 
-        <button type="submit" className="mt-6 px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600">
+        <button
+          type="submit"
+          className="mt-6 w-full bg-blue-600 text-white py-2 rounded"
+        >
           Save Profile
         </button>
       </form>

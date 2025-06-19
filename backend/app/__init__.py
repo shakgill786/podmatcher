@@ -28,9 +28,6 @@ def create_app():
         SESSION_COOKIE_HTTPONLY=True,
     )
 
-    # ─── Disable strict slashes so /api/messages and /api/messages/ both work
-    app.url_map.strict_slashes = False
-
     # ─── Init extensions ─────────────────────────────────────────────────
     db.init_app(app)
     Migrate(app, db)
@@ -38,7 +35,8 @@ def create_app():
     Session(app)
     csrf.init_app(app)
 
-    # ─── User loader ────────────────────────────────────────────────────
+    login_manager.login_view = 'auth.login'
+
     from app.models import User
     @login_manager.user_loader
     def load_user(user_id):
@@ -48,27 +46,27 @@ def create_app():
     CORS(
         app,
         supports_credentials=True,
-        resources={
-            r"/api/*": {
-                "origins": ["http://localhost:5173"],
-                "methods": ["GET","POST","PUT","DELETE","OPTIONS"],
-                "allow_headers": ["Content-Type","X-CSRFToken"]
-            }
-        },
+        resources={r"/api/*": {
+            "origins": ["http://localhost:5173"],
+            "methods": ["GET","POST","PUT","DELETE","OPTIONS"],
+            "allow_headers": ["Content-Type","X-CSRFToken"]
+        }}
     )
 
     # ─── Blueprints ──────────────────────────────────────────────────────
     from app.api.auth_routes     import auth_routes
     from app.api.user_routes     import user_routes
     from app.api.messages_routes import message_routes
+    from app.api.audio_routes    import audio_routes
     from app.api.csrf_routes     import csrf_routes
 
-    app.register_blueprint(auth_routes,     url_prefix="/api/auth")
-    app.register_blueprint(user_routes,     url_prefix="/api/users")
-    app.register_blueprint(message_routes,  url_prefix="/api/messages")
-    app.register_blueprint(csrf_routes,     url_prefix="/api")
+    app.register_blueprint(auth_routes,    url_prefix="/api/auth")
+    app.register_blueprint(user_routes,    url_prefix="/api/users")
+    app.register_blueprint(message_routes, url_prefix="/api/messages")
+    app.register_blueprint(audio_routes,   url_prefix="/api/audio")
+    app.register_blueprint(csrf_routes,    url_prefix="/api")
 
-    # ─── CLI seeds ──────────────────────────────────────────────────────
+    # ─── Seed CLI ────────────────────────────────────────────────────────
     from app.seeds.seed_commands import seed_commands
     app.cli.add_command(seed_commands)
 
