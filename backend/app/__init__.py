@@ -1,5 +1,3 @@
-# backend/app/__init__.py
-
 from flask import Flask
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -35,8 +33,10 @@ def create_app():
     Session(app)
     csrf.init_app(app)
 
+    # Redirect unauthenticated to login blueprint
     login_manager.login_view = 'auth.login'
 
+    # ─── User loader ────────────────────────────────────────────────────
     from app.models import User
     @login_manager.user_loader
     def load_user(user_id):
@@ -46,11 +46,18 @@ def create_app():
     CORS(
         app,
         supports_credentials=True,
-        resources={r"/api/*": {
-            "origins": ["http://localhost:5173"],
-            "methods": ["GET","POST","PUT","DELETE","OPTIONS"],
-            "allow_headers": ["Content-Type","X-CSRFToken"]
-        }}
+        resources={
+            # API endpoints
+            r"/api/*": {
+                "origins": ["http://localhost:5173"],
+                "methods": ["GET","POST","PUT","DELETE","OPTIONS"],
+                "allow_headers": ["Content-Type","X-CSRFToken"]
+            },
+            # Static audio snippets
+            r"/static/*": {
+                "origins": ["http://localhost:5173"]
+            }
+        },
     )
 
     # ─── Blueprints ──────────────────────────────────────────────────────
