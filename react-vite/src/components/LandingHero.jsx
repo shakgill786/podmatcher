@@ -33,10 +33,7 @@ export default function LandingHero() {
           </div>
         </motion.div>
         <motion.div className="hero-image" variants={item}>
-          <img
-            src="/landing-illustration.svg"
-            alt="Two podcasters chatting"
-          />
+          <img src="/landing-illustration.png" alt="Two podcasters chatting" /> 
         </motion.div>
       </div>
     </motion.section>

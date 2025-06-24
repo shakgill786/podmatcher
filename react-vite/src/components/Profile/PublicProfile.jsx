@@ -83,7 +83,7 @@ export default function PublicProfile() {
         {/* Right: Illustration */}
         <div className="hidden lg:block lg:w-1/3">
           <img
-            src="/landing-illustration.svg"
+            src="/landing-illustration.png"
             alt="Podcasters chatting illustration"
             className="w-full h-auto"
           />
