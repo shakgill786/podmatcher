@@ -1,24 +1,20 @@
-// react-vite/src/components/Profile/PublicProfile.jsx
-
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "../../store/axiosConfig";
 import { toast } from "react-hot-toast";
 
 export default function PublicProfile() {
   const { userId } = useParams();
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) return;
     (async () => {
       try {
         const { data } = await axios.get(`/users/${userId}`);
         setProfile(data);
-      } catch (err) {
-        console.error("❌ Error loading profile:", err);
+      } catch {
         toast.error("Failed to load profile");
       } finally {
         setLoading(false);
@@ -26,60 +22,72 @@ export default function PublicProfile() {
     })();
   }, [userId]);
 
-  const handleSendMessage = async () => {
+  const sendMessage = async () => {
     try {
       await axios.post("/messages", {
         recipient_id: profile.id,
-        body:         "Hey there! 👋 Let's connect!",
+        body: "👋 Hey there!",
       });
-      toast.success("Message sent!");
       navigate(`/messages/${userId}`);
-    } catch (err) {
-      console.error("❌ Error sending message:", err);
+    } catch {
       toast.error("Failed to send message");
     }
   };
 
-  if (loading) return <div className="text-center mt-10 text-blue-600">Loading profile...</div>;
-  if (!profile) return <div className="text-center mt-10 text-red-600">User not found</div>;
+  if (loading) {
+    return <p className="container text-center py-8">Loading…</p>;
+  }
+  if (!profile) {
+    return <p className="container text-center py-8 text-red-600">User not found</p>;
+  }
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-200">
-      <h1 className="text-3xl font-bold text-center mb-6 text-indigo-700">
-        🎧 {profile.username}'s Public Profile
-      </h1>
+    <div className="container py-8">
+      <div className="card lg:flex lg:space-x-8">
+        {/* Left: Info */}
+        <div className="flex-1 space-y-4">
+          <h2 className="text-2xl font-bold text-indigo-600">
+            🎧 {profile.username}'s Profile
+          </h2>
+          <p><strong>Bio:</strong> {profile.bio || "—"}</p>
+          <p><strong>Interests:</strong> {profile.interests || "—"}</p>
+          <p><strong>Role:</strong> {profile.role}</p>
+          <p><strong>Category:</strong> {profile.category || "—"}</p>
 
-      <p className="mb-3"><strong>🧠 Bio:</strong> {profile.bio       || "No bio yet."}</p>
-      <p className="mb-3"><strong>🎯 Interests:</strong> {profile.interests || "No interests yet."}</p>
-      <p className="mb-3"><strong>🎙️ Role:</strong> {profile.role}</p>
-      <p className="mb-6"><strong>📚 Category:</strong> {profile.category || "N/A"}</p>
+          {profile.audio_url ? (
+            <div className="mt-4">
+              <label className="font-semibold">Intro Audio:</label>
+              <audio
+                controls
+                src={profile.audio_url}
+                className="w-full mt-2 rounded"
+              />
+            </div>
+          ) : (
+            <p className="italic text-gray-500">No intro audio yet.</p>
+          )}
 
-      {profile.audio_url ? (
-        <div className="mb-6">
-          <p className="font-semibold">🎧 Audio Preview:</p>
-          <audio
-            controls
-            className="mt-2 w-full"
-            src={profile.audio_url}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={sendMessage}
+              className="btn btn-primary"
+            >
+              💬 Message
+            </button>
+            <Link to="/dashboard" className="btn btn-outline">
+              ← Back to Dashboard
+            </Link>
+          </div>
+        </div>
+
+        {/* Right: Illustration */}
+        <div className="hidden lg:block lg:w-1/3">
+          <img
+            src="/landing-illustration.svg"
+            alt="Podcasters chatting illustration"
+            className="w-full h-auto"
           />
         </div>
-      ) : (
-        <p className="italic text-gray-500 mb-6">
-          🎵 No intro audio yet.
-        </p>
-      )}
-
-      <button
-        onClick={handleSendMessage}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow mb-4"
-      >
-        💬 Message this User
-      </button>
-
-      <div className="text-center">
-        <Link to="/dashboard" className="text-blue-600 hover:underline">
-          ← Back to Dashboard
-        </Link>
       </div>
     </div>
   );

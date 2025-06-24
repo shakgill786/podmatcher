@@ -1,14 +1,20 @@
-import { useState, useEffect } from "react";
+// react-vite/src/components/Auth/LoginForm.jsx
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import { thunkLogin } from "../../store/sessionSlice";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 export default function LoginForm() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.session.user);
+  const user     = useSelector((s) => s.session.user);
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  // If already logged in, bounce to dashboard
+  useEffect(() => {
+    if (user) navigate("/dashboard");
+  }, [user, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,42 +23,59 @@ export default function LoginForm() {
     e.preventDefault();
     try {
       const res = await dispatch(thunkLogin(formData)).unwrap();
-      toast.success(`Welcome back, ${res.username}! 👋`);
-      setTimeout(() => navigate("/dashboard"), 300);
-    } catch (err) {
-      toast.error(err?.error || err?.errors?.email?.[0] || "Login failed");
+      toast.success(`Welcome back, ${res.username}!`);
+      navigate("/dashboard");
+    } catch {
+      toast.error("Login failed. Check your credentials.");
     }
   };
 
-  useEffect(() => {
-    if (user) navigate("/dashboard");
-  }, [user]);
-
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow w-80 mx-auto mt-20">
-      <h2 className="text-xl mb-4 text-center font-semibold text-gray-700">Login</h2>
-
-      {["email", "password"].map((field) => (
-        <input
-          key={field}
-          name={field}
-          type={field}
-          placeholder={field}
-          value={formData[field]}
-          onChange={handleChange}
-          className="mb-3 p-2 border w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          autoComplete={field === "password" ? "current-password" : "email"}
-          required
-        />
-      ))}
-
-      <button
-        type="submit"
-        disabled={formData.email.length < 4 || formData.password.length < 6}
-        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full transition"
-      >
-        Login
-      </button>
-    </form>
+    <div className="container flex flex-col justify-center items-center min-h-[calc(100vh-160px)]">
+      <h2 className="text-3xl font-bold text-center mb-6">
+        Welcome Back to MicMates
+      </h2>
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Email</label>
+          <input
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Password</label>
+          <input
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn btn-primary w-full"
+          disabled={
+            formData.email.length < 4 || formData.password.length < 6
+          }
+        >
+          Log In
+        </button>
+      </form>
+      <p className="mt-4 text-center">
+        Don’t have an account?{" "}
+        <Link to="/signup" className="btn btn-outline inline-block">
+          Sign Up
+        </Link>
+      </p>
+    </div>
   );
 }

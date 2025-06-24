@@ -1,86 +1,97 @@
 // react-vite/src/store/sessionSlice.js
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "./axiosConfig";
 
-// 🌍 Define backend API base URL
-const BASE_URL = "http://localhost:5000";
-
-// 🔐 CSRF-aware fetcher
-const csrfFetch = async (endpoint, options = {}) => {
-  options.method = options.method || "GET";
-  options.headers = options.headers || {};
-
-  if (options.method.toUpperCase() !== "GET") {
-    options.headers["Content-Type"] = "application/json";
-
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("csrf_token="))
-      ?.split("=")[1];
-
-    if (csrfToken) {
-      options.headers["X-CSRFToken"] = csrfToken;
-    }
-  }
-
-  options.credentials = "include";
-
-  const fullUrl = `${BASE_URL}${endpoint}`;
-  console.log("🛰️ Sending request to", fullUrl, options);
-
-  const res = await fetch(fullUrl, options);
-  return res;
-};
-
-// 🔁 Check if user is logged in
+// 🔁 Restore session
 export const thunkAuthenticate = createAsyncThunk(
   "session/authenticate",
-  async () => {
-    const res = await csrfFetch("/api/auth/me");
-    if (res.ok) return await res.json();
-    throw new Error("Not authenticated");
+  async (_, { rejectWithValue }) => {
+    try {
+      // GET /api/auth/me → returns user object
+      const { data } = await axios.get("/auth/me");
+      return data;
+    } catch (err) {
+      // if 401 or network error, we'll wind up here
+      return rejectWithValue(err.response?.data || { error: "Not authenticated" });
+    }
   }
 );
 
 // 🔑 Login
 export const thunkLogin = createAsyncThunk(
   "session/login",
-  async (credentials, { rejectWithValue }) => {
-    const res = await csrfFetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
-
-    const data = await res.json();
-    if (!res.ok) return rejectWithValue(data);
-    return data;
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      // POST /api/auth/login { email, password }
+      const { data } = await axios.post("/auth/login", { email, password });
+      // data should be { user: { ... } }
+      return data;
+    } catch (err) {
+      // bubble up backend errors
+      return rejectWithValue(err.response?.data || { error: "Login failed" });
+    }
   }
 );
 
 // 🚪 Logout
-export const thunkLogout = createAsyncThunk("session/logout", async () => {
-  await csrfFetch("/api/auth/logout", { method: "POST" });
-});
+export const thunkLogout = createAsyncThunk(
+  "session/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      await axios.post("/auth/logout");
+      // nothing to return
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { error: "Logout failed" });
+    }
+  }
+);
 
-// 🧠 Session slice
 const sessionSlice = createSlice({
   name: "session",
-  initialState: { user: null },
+  initialState: { user: null, status: "idle", error: null },
   reducers: {
-    setUser: (state, action) => {
+    setUser(state, action) {
       state.user = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(thunkAuthenticate.fulfilled, (state, action) => {
-        state.user = action.payload;
+      // authenticate
+      .addCase(thunkAuthenticate.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
       })
-      .addCase(thunkLogin.fulfilled, (state, action) => {
-        state.user = action.payload.user;
+      .addCase(thunkAuthenticate.fulfilled, (state, { payload }) => {
+        state.status = "succeeded";
+        state.user = payload;           // payload is the user object
       })
+      .addCase(thunkAuthenticate.rejected, (state, { payload }) => {
+        state.status = "failed";
+        state.user = null;
+        state.error = payload.error;
+      })
+
+      // login
+      .addCase(thunkLogin.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(thunkLogin.fulfilled, (state, { payload }) => {
+        state.status = "succeeded";
+        state.user = payload.user;      // payload.user is the user object
+      })
+      .addCase(thunkLogin.rejected, (state, { payload }) => {
+        state.status = "failed";
+        state.error = payload.error;
+      })
+
+      // logout
       .addCase(thunkLogout.fulfilled, (state) => {
         state.user = null;
+        state.status = "idle";
+      })
+      .addCase(thunkLogout.rejected, (state, { payload }) => {
+        state.error = payload.error;
       });
   },
 });

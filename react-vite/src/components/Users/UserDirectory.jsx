@@ -1,5 +1,3 @@
-// react-vite/src/components/Users/UserDirectory.jsx
-
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllUsersThunk } from "../../store/usersSlice";
@@ -7,62 +5,41 @@ import { Link } from "react-router-dom";
 
 export default function UserDirectory() {
   const dispatch = useDispatch();
-  const users = useSelector((state) => state.users);
+  const users = useSelector((s) => s.users);
 
   useEffect(() => {
     dispatch(getAllUsersThunk());
   }, [dispatch]);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center text-indigo-700">
-        🔍 Browse PodMatchers
-      </h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {users.length === 0 ? (
-          <p className="text-center text-gray-500 col-span-full">
-            No other users yet.
-          </p>
-        ) : (
-          users.map((u) => (
-            <div
-              key={u.id}
-              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition border border-gray-200"
-            >
-              <h2 className="text-xl font-semibold mb-2">{u.username}</h2>
-              <p><strong>🎙 Role:</strong> {u.role}</p>
-              <p><strong>📚 Category:</strong> {u.category || "N/A"}</p>
-              <p className="text-gray-700 mt-2">
-                {u.bio?.slice(0, 80)}...
-              </p>
-
-              {u.audio_file && (
-                <audio
-                  controls
-                  src={`/static/audio_snippets/${u.audio_file}`}
-                  className="mt-2 w-full"
-                />
-              )}
-
-              <div className="mt-4 space-x-3">
-                <Link
-                  to={`/profile/${u.id}`}
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  👀 View Profile
+    <div className="container py-8">
+      <h2 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+        🔍 Browse MicMates
+      </h2>
+      {users.length === 0 ? (
+        <p className="text-center text-gray-700">No other users yet.</p>
+      ) : (
+        <div className="grid-users">
+          {users.map((u) => (
+            <div key={u.id} className="card flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-semibold mb-1">{u.username}</h3>
+                <p className="text-sm text-gray-600 mb-2">{u.bio?.slice(0, 80) || "No bio yet."}</p>
+                <p className="text-sm"><strong>Role:</strong> {u.role}</p>
+                <p className="text-sm"><strong>Category:</strong> {u.category || "—"}</p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link to={`/profile/${u.id}`} className="btn btn-outline flex-1 text-center">
+                  👀 View
                 </Link>
-                <Link
-                  to={`/messages/${u.id}`}
-                  className="text-green-600 hover:underline font-semibold"
-                >
+                <Link to={`/messages/${u.id}`} className="btn btn-primary flex-1 text-center">
                   💬 Message
                 </Link>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

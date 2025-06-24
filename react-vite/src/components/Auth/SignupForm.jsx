@@ -1,57 +1,93 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// react-vite/src/components/Auth/SignupForm.jsx
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "../../store/axiosConfig";
 import { getCSRFToken } from "../../utils/csrf";
 import { toast } from "react-hot-toast";
 
 export default function SignupForm() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email,    setEmail]    = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("guest");
+  const [role,     setRole]     = useState("guest");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const csrfToken = getCSRFToken();
-
     try {
-      const res = await axios.post(
+      await axios.post(
         "/auth/signup",
         { email, username, password, role },
         { headers: { "X-CSRFToken": csrfToken } }
       );
-      toast.success(`🎉 Welcome, ${res.data.user.username}! Your account is ready.`);
-      setTimeout(() => navigate("/dashboard"), 500);
+      toast.success(`Welcome aboard, ${username}!`);
+      navigate("/dashboard");
     } catch (err) {
-      console.error("Signup failed", err);
-      toast.error(err.response?.data?.error || "Something went wrong.");
+      toast.error(err.response?.data?.error || "Signup failed");
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-md mt-10">
-      <h2 className="text-xl font-bold mb-4">Create an Account</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Email</label>
-        <input className="w-full border p-2 mb-4" value={email} onChange={e => setEmail(e.target.value)} />
-
-        <label>Username</label>
-        <input className="w-full border p-2 mb-4" value={username} onChange={e => setUsername(e.target.value)} />
-
-        <label>Password</label>
-        <input type="password" className="w-full border p-2 mb-4" value={password} onChange={e => setPassword(e.target.value)} />
-
-        <label>Role</label>
-        <select className="w-full border p-2 mb-4" value={role} onChange={e => setRole(e.target.value)}>
-          <option value="host">Host</option>
-          <option value="guest">Guest</option>
-        </select>
-
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+    <div className="container flex flex-col justify-center items-center min-h-[calc(100vh-160px)]">
+      <h2 className="text-3xl font-bold text-center mb-6">
+        Create Your MicMates Account
+      </h2>
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Email</label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Username</label>
+          <input
+            placeholder="Your handle"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Password</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label className="block mb-1 font-semibold">Role</label>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full border p-3 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          >
+            <option value="host">Host</option>
+            <option value="guest">Guest</option>
+          </select>
+        </div>
+        <button type="submit" className="btn btn-primary w-full">
           Sign Up
         </button>
       </form>
+      <p className="mt-4 text-center">
+        Already have an account?{" "}
+        <Link to="/login" className="btn btn-outline inline-block">
+          Log In
+        </Link>
+      </p>
     </div>
   );
 }

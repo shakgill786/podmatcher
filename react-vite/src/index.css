@@ -1,18 +1,18 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   COLORS & FONTS
-───────────────────────────────────────────────────────────────────────────── */
+/*────────────────────────────────────────────────────
+  MicMates Global Styles
+────────────────────────────────────────────────────*/
 :root {
-  --color-primary: #4e54c8;
-  --color-secondary: #8f94fb;
-  --color-accent: #ffd54f;
-  --color-bg-light: #f5f7fa;
-  --color-text: #213547;
-  --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --color-primary:    #4169E1; /* royal blue */
+  --color-secondary:  #8A2BE2; /* blue violet */
+  --color-accent:     #FF4081; /* pink accent */
+  --color-bg:         #F0F4FF; /* very light blue */
+  --color-text:       #213547; /* dark slate */
+  --color-white:      #FFFFFF;
+  --font-base:        'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --logo-height:      80px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   GLOBAL RESET & BASE
-───────────────────────────────────────────────────────────────────────────── */
+/* Reset */
 *,
 *::before,
 *::after {
@@ -21,105 +21,326 @@
   padding: 0;
 }
 
+/* Base */
 html, body {
   width: 100%;
   height: 100%;
   font-family: var(--font-base);
-  background: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-secondary)
-  );
+  background: var(--color-bg);
   color: var(--color-text);
+  line-height: 1.5;
 }
 
-/* ensure header/nav isn’t overlapped */
-main {
-  padding-top: 80px;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   HEADER & NAV
-───────────────────────────────────────────────────────────────────────────── */
+/*────────────────────────────────────────────────────
+  HEADER / NAV
+────────────────────────────────────────────────────*/
 header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
   width: 100%;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+header .inner {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 2rem;
-  z-index: 1000;
 }
-
 header .logo {
   display: flex;
   align-items: center;
+  text-decoration: none;
 }
-
 header .logo img {
-  height: 40px;
-  margin-right: 0.5rem;
+  height: var(--logo-height);
+  width: auto;
+  margin-right: 0.75rem;
 }
-
 header .logo h1 {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #fff;
+  color: var(--color-primary);
 }
-
-header nav a {
+header .logo .tagline {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+header nav a,
+header nav button {
   margin-left: 1.5rem;
-  color: #fff;
   text-decoration: none;
   font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
   transition: color 0.3s ease;
 }
-
-header nav a:hover {
-  color: var(--color-accent);
+header nav a:hover,
+header nav button:hover {
+  color: var(--color-primary);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   BUTTONS & LINKS
-───────────────────────────────────────────────────────────────────────────── */
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  border: none;
-  border-radius: 6px;
-  padding: 0.6em 1.2em;
-  font: inherit;
-  cursor: pointer;
-  transition: background 0.25s, transform 0.1s;
-}
-
-button:hover {
-  transform: translateY(-1px);
-}
-button:active {
-  transform: translateY(0);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   FORM CONTAINERS
-───────────────────────────────────────────────────────────────────────────── */
+/*────────────────────────────────────────────────────
+  LAYOUT CONTAINERS
+────────────────────────────────────────────────────*/
 .container {
   max-width: 480px;
   margin: 2rem auto;
-  background: #ffffffcc;
-  backdrop-filter: blur(4px);
-  padding: 2rem;
+  background: var(--color-white);
   border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  padding: 2rem;
+}
+.card {
+  background: var(--color-white);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  padding: 2rem;
+  margin-bottom: 2rem;
 }
 
-/* utility */
-.mt-20 { margin-top: 5rem; }
-.w-80  { width: 20rem; }
+/*────────────────────────────────────────────────────
+  FORM ELEMENTS
+────────────────────────────────────────────────────*/
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  display: block;
+  margin-bottom: .5rem;
+  font-weight: 600;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: .75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font: inherit;
+}
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/*────────────────────────────────────────────────────
+  BUTTONS
+────────────────────────────────────────────────────*/
+.btn {
+  display: inline-block;
+  padding: .75rem 1.25rem;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: background .3s, transform .1s;
+  border: none;
+}
+.btn:hover {
+  transform: translateY(-2px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.btn-primary:hover {
+  background: var(--color-secondary);
+}
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+}
+.btn-outline:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/*────────────────────────────────────────────────────
+  TYPOGRAPHY
+────────────────────────────────────────────────────*/
+h1, h2, h3, h4 {
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+h2 {
+  font-size: 1.75rem;
+}
+p {
+  margin-bottom: 1rem;
+}
+
+/*────────────────────────────────────────────────────
+  HERO SECTION
+────────────────────────────────────────────────────*/
+.hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+  background: var(--color-bg);
+}
+
+.hero-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  width: 100%;
+  background: var(--color-white);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero-card::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle at center, var(--color-accent)33, transparent 70%);
+  transform: rotate(45deg);
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.hero-content .subtitle {
+  font-size: 1.125rem;
+  color: var(--color-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.hero-image {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/*────────────────────────────────────────────────────
+  BROWSE USERS GRID
+────────────────────────────────────────────────────*/
+.grid-users {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+  gap: 1.5rem;
+}
+
+/*────────────────────────────────────────────────────
+  INBOX LIST
+────────────────────────────────────────────────────*/
+.inbox-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.inbox-list li {
+  padding: .75rem 0;
+  border-bottom: 1px solid #eee;
+}
+.inbox-list li:last-child {
+  border-bottom: none;
+}
+.inbox-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color .3s;
+}
+.inbox-list a:hover .username {
+  color: var(--color-primary);
+}
+.inbox-list .preview {
+  flex: 1;
+  margin: 0 .5rem;
+  color: #555;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*────────────────────────────────────────────────────
+  FOOTER
+────────────────────────────────────────────────────*/
+footer {
+  text-align: center;
+  padding: 1rem 0;
+  color: #777;
+  font-size: .875rem;
+  background: var(--color-white);
+  margin-top: auto;
+}
+
+/*────────────────────────────────────────────────────
+  RESPONSIVE TWEAKS
+────────────────────────────────────────────────────*/
+@media (max-width: 800px) {
+  .hero-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .cta-buttons {
+    justify-content: center;
+    flex-direction: column;
+  }
+  .cta-buttons .btn {
+    margin: 0.5rem auto;
+    width: 60%;
+  }
+}
+@media (max-width: 600px) {
+  header .inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  header nav {
+    margin-top: .5rem;
+  }
+  .container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+}
