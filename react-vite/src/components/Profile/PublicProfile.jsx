@@ -35,24 +35,36 @@ export default function PublicProfile() {
   };
 
   if (loading) {
-    return <p className="container text-center py-8">Loading…</p>;
+    return (
+      <main className="hero">
+        <div className="hero-card">
+          <p className="text-center">Loading…</p>
+        </div>
+      </main>
+    );
   }
   if (!profile) {
-    return <p className="container text-center py-8 text-red-600">User not found</p>;
+    return (
+      <main className="hero">
+        <div className="hero-card">
+          <p className="text-center text-red-600">User not found</p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <div className="container py-8">
-      <div className="lg:flex lg:space-x-8">
-        {/* Left: Info card */}
-        <div className="flex-1 card space-y-4">
+    <main className="hero">
+      <div className="hero-card lg:flex lg:space-x-8">
+        {/* Left: Info block */}
+        <div className="flex-1 space-y-4">
           <h2 className="text-2xl font-bold text-indigo-600">
             🎧 {profile.username}'s Profile
           </h2>
-          <p><strong>Bio:</strong>       {profile.bio || "—"}</p>
+          <p><strong>Bio:</strong>       {profile.bio       || "—"}</p>
           <p><strong>Interests:</strong> {profile.interests || "—"}</p>
           <p><strong>Role:</strong>      {profile.role}</p>
-          <p><strong>Category:</strong>  {profile.category || "—"}</p>
+          <p><strong>Category:</strong>  {profile.category   || "—"}</p>
 
           {profile.audio_url ? (
             <div className="mt-4">
@@ -77,7 +89,7 @@ export default function PublicProfile() {
           </div>
         </div>
 
-        {/* Right: Illustration card */}
+        {/* Right: profile‐specific wrapper & image */}
         <div className="publicprofile-image-wrapper mt-6 lg:mt-0 lg:w-1/3">
           <img
             src="/landing-illustration.png"
@@ -86,6 +98,6 @@ export default function PublicProfile() {
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

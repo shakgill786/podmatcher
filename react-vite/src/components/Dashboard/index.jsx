@@ -5,7 +5,7 @@ export default function Dashboard({ user }) {
   return (
     <main className="hero">
       <div className="hero-card lg:flex lg:items-start lg:space-x-8">
-        {/* ─── Left: Text Block ─────────────────────────── */}
+        {/* Left: Text block */}
         <div className="flex-1 space-y-4">
           <h2 className="text-3xl font-bold">
             Welcome back,{" "}
@@ -30,7 +30,7 @@ export default function Dashboard({ user }) {
           </div>
         </div>
 
-        {/* ─── Right: Clipped Illustration ───────────────────── */}
+        {/* Right: dashboard‐specific wrapper & image */}
         <div className="dashboard-image-wrapper hidden lg:block lg:w-1/2">
           <img
             src="/landing-illustration.png"
