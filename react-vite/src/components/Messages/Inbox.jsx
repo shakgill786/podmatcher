@@ -17,25 +17,27 @@ export default function Inbox() {
   }, []);
 
   return (
-    <div className="container">
-      <h2 style={{ marginBottom: "1rem" }}>Inbox</h2>
-      {threads.length === 0 ? (
-        <p>No conversations yet.</p>
-      ) : (
-        <ul className="inbox-list">
-          {threads.map((t) => (
-            <li key={t.user_id}>
-              <Link to={`/messages/${t.user_id}`}>
-                <span className="username">{t.username}</span>
-                <span className="preview">{t.last_message}</span>
-                <span className="time">
-                  {new Date(t.timestamp).toLocaleString()}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <main className="hero">
+      <div className="hero-card">
+        <h2 className="text-2xl font-bold mb-4 text-indigo-600">Inbox</h2>
+        {threads.length === 0 ? (
+          <p>No conversations yet.</p>
+        ) : (
+          <ul className="inbox-list">
+            {threads.map((t) => (
+              <li key={t.user_id}>
+                <Link to={`/messages/${t.user_id}`}>
+                  <span className="username">{t.username}</span>
+                  <span className="preview">{t.last_message}</span>
+                  <span className="time">
+                    {new Date(t.timestamp).toLocaleString()}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </main>
   );
 }
