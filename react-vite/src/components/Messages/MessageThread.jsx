@@ -1,26 +1,82 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import io from "socket.io-client";
 import axios from "../../store/axiosConfig";
 
 export default function MessageThread() {
   const { userId } = useParams();
+  const me        = useSelector((s) => s.session.user);
   const [messages, setMessages]     = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [recipient, setRecipient]   = useState(null);
+  const [isTyping, setIsTyping]     = useState(false);
 
+  const bottomRef = useRef(null);
+  const typingTimer = useRef(null);
+  const socketRef  = useRef();
+
+  // 1) Establish socket connection & join our own room
+  useEffect(() => {
+    socketRef.current = io("http://localhost:5000", {
+      withCredentials: true,
+    });
+    socketRef.current.emit("join", { room: String(me.id) });
+
+    // on remote new message
+    socketRef.current.on("new_message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+    // on remote typing
+    socketRef.current.on("typing", () => {
+      setIsTyping(true);
+      clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => {
+        setIsTyping(false);
+      }, 1500);
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [me.id]);
+
+  // 2) Load initial thread & recipient
   useEffect(() => {
     (async () => {
       try {
-        const res = await axios.get(`/messages/${userId}`);
-        setMessages(res.data);
-        const userRes = await axios.get(`/users/${userId}`);
-        setRecipient(userRes.data);
+        const [{ data: thread }, { data: user }] = await Promise.all([
+          axios.get(`/messages/${userId}`),
+          axios.get(`/users/${userId}`),
+        ]);
+        setMessages(thread);
+        setRecipient(user);
+
+        // also join the room of our chat partner
+        socketRef.current.emit("join", { room: String(user.id) });
       } catch (err) {
         console.error(err);
       }
     })();
   }, [userId]);
 
+  // 3) Auto-scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 4) handle typing indicator & emit
+  const handleInput = (e) => {
+    setNewMessage(e.target.value);
+    socketRef.current.emit("typing", { to: Number(userId) });
+    clearTimeout(typingTimer.current);
+    setIsTyping(true);
+    typingTimer.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  // 5) Send
   const handleSend = async () => {
     const body = newMessage.trim();
     if (!body) return;
@@ -31,6 +87,9 @@ export default function MessageThread() {
       });
       setMessages((prev) => [...prev, data]);
       setNewMessage("");
+      setIsTyping(false);
+
+      // no need to emit new_message manually: server will broadcast it
     } catch (err) {
       console.error(err);
     }
@@ -43,12 +102,12 @@ export default function MessageThread() {
           💬 Chat with {recipient?.username || "User"}
         </h2>
 
-        <div className="h-64 overflow-y-auto bg-gray-50 p-4 rounded border mb-4">
+        <div className="h-64 overflow-y-auto bg-gray-50 p-4 rounded border mb-2">
           {messages.length === 0 ? (
             <p className="text-gray-500 italic">No messages yet.</p>
           ) : (
             messages.map((msg) => {
-              const isIncoming = msg.from === recipient?.username;
+              const isIncoming = msg.sender_id === recipient?.id;
               return (
                 <div
                   key={msg.id}
@@ -68,7 +127,14 @@ export default function MessageThread() {
               );
             })
           )}
+          <div ref={bottomRef} />
         </div>
+
+        {isTyping && (
+          <p className="text-sm text-gray-500 italic mb-2">
+            💬 Someone is typing…
+          </p>
+        )}
 
         <div className="flex gap-2">
           <input
@@ -76,7 +142,7 @@ export default function MessageThread() {
             className="flex-1 p-2 border rounded"
             placeholder="Type your message..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInput}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
           <button

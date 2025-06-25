@@ -1,6 +1,9 @@
+# backend/app/api/messages_routes.py
+
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.models import db, Message, User
+from app import socketio
 
 message_routes = Blueprint("messages", __name__)
 
@@ -36,6 +39,14 @@ def post_message():
         )
         db.session.add(msg)
         db.session.commit()
+
+        # Broadcast the new message to the recipient's room
+        socketio.emit(
+            "new_message",
+            msg.to_dict(),
+            room=str(recipient_id)
+        )
+
         return jsonify(msg.to_dict()), 201
 
     except Exception:
