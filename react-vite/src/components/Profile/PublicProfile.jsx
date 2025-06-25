@@ -5,9 +5,9 @@ import { toast } from "react-hot-toast";
 
 export default function PublicProfile() {
   const { userId } = useParams();
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const navigate   = useNavigate();
+  const [profile,  setProfile]  = useState(null);
+  const [loading, setLoading]  = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -26,7 +26,7 @@ export default function PublicProfile() {
     try {
       await axios.post("/messages", {
         recipient_id: profile.id,
-        body: "👋 Hey there!",
+        body:         "👋 Hey there!",
       });
       navigate(`/messages/${userId}`);
     } catch {
@@ -43,16 +43,16 @@ export default function PublicProfile() {
 
   return (
     <div className="container py-8">
-      <div className="card lg:flex lg:space-x-8">
-        {/* Left: Info */}
-        <div className="flex-1 space-y-4">
+      <div className="lg:flex lg:space-x-8">
+        {/* Left: Info card */}
+        <div className="flex-1 card space-y-4">
           <h2 className="text-2xl font-bold text-indigo-600">
             🎧 {profile.username}'s Profile
           </h2>
-          <p><strong>Bio:</strong> {profile.bio || "—"}</p>
+          <p><strong>Bio:</strong>       {profile.bio || "—"}</p>
           <p><strong>Interests:</strong> {profile.interests || "—"}</p>
-          <p><strong>Role:</strong> {profile.role}</p>
-          <p><strong>Category:</strong> {profile.category || "—"}</p>
+          <p><strong>Role:</strong>      {profile.role}</p>
+          <p><strong>Category:</strong>  {profile.category || "—"}</p>
 
           {profile.audio_url ? (
             <div className="mt-4">
@@ -68,10 +68,7 @@ export default function PublicProfile() {
           )}
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              onClick={sendMessage}
-              className="btn btn-primary"
-            >
+            <button onClick={sendMessage} className="btn btn-primary">
               💬 Message
             </button>
             <Link to="/dashboard" className="btn btn-outline">
@@ -80,12 +77,12 @@ export default function PublicProfile() {
           </div>
         </div>
 
-        {/* Right: Illustration */}
-        <div className="hidden lg:block lg:w-1/3">
+        {/* Right: Illustration card */}
+        <div className="publicprofile-image-wrapper mt-6 lg:mt-0 lg:w-1/3">
           <img
             src="/landing-illustration.png"
             alt="Podcasters chatting illustration"
-            className="w-full h-auto"
+            className="publicprofile-image"
           />
         </div>
       </div>
