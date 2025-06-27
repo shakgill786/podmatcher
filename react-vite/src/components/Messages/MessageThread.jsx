@@ -6,42 +6,35 @@ import axios from "../../store/axiosConfig";
 
 export default function MessageThread() {
   const { userId } = useParams();
-  const me        = useSelector((s) => s.session.user);
+  const me         = useSelector((s) => s.session.user);
   const [messages, setMessages]     = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [recipient, setRecipient]   = useState(null);
   const [isTyping, setIsTyping]     = useState(false);
 
-  const bottomRef = useRef(null);
+  const bottomRef   = useRef(null);
   const typingTimer = useRef(null);
-  const socketRef  = useRef();
+  const socketRef   = useRef();
 
-  // 1) Establish socket connection & join our own room
+  // 1️⃣ Connect & join our room
   useEffect(() => {
-    socketRef.current = io("http://localhost:5000", {
-      withCredentials: true,
+    socketRef.current = io("http://localhost:5000", { withCredentials: true });
+    socketRef.current.on("connect", () => {
+      console.log("⚡ socket connected");
+      socketRef.current.emit("join", { room: String(me.id) });
     });
-    socketRef.current.emit("join", { room: String(me.id) });
-
-    // on remote new message
     socketRef.current.on("new_message", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
-    // on remote typing
     socketRef.current.on("typing", () => {
       setIsTyping(true);
       clearTimeout(typingTimer.current);
-      typingTimer.current = setTimeout(() => {
-        setIsTyping(false);
-      }, 1500);
+      typingTimer.current = setTimeout(() => setIsTyping(false), 1500);
     });
-
-    return () => {
-      socketRef.current.disconnect();
-    };
+    return () => socketRef.current.disconnect();
   }, [me.id]);
 
-  // 2) Load initial thread & recipient
+  // 2️⃣ Load history & join partner’s room
   useEffect(() => {
     (async () => {
       try {
@@ -51,45 +44,39 @@ export default function MessageThread() {
         ]);
         setMessages(thread);
         setRecipient(user);
-
-        // also join the room of our chat partner
         socketRef.current.emit("join", { room: String(user.id) });
       } catch (err) {
-        console.error(err);
+        console.error("Error loading chat:", err);
       }
     })();
   }, [userId]);
 
-  // 3) Auto-scroll
+  // 3️⃣ Auto-scroll on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 4) handle typing indicator & emit
+  // 4️⃣ Typing indicator
   const handleInput = (e) => {
     setNewMessage(e.target.value);
     socketRef.current.emit("typing", { to: Number(userId) });
     clearTimeout(typingTimer.current);
     setIsTyping(true);
-    typingTimer.current = setTimeout(() => {
-      setIsTyping(false);
-    }, 1500);
+    typingTimer.current = setTimeout(() => setIsTyping(false), 1500);
   };
 
-  // 5) Send
+  // 5️⃣ Send — **no** optimistic setMessages
   const handleSend = async () => {
     const body = newMessage.trim();
     if (!body) return;
     try {
-      const { data } = await axios.post("/messages", {
+      await axios.post("/messages", {
         recipient_id: parseInt(userId, 10),
         body,
       });
-      setMessages((prev) => [...prev, data]);
       setNewMessage("");
       setIsTyping(false);
-
-      // no need to emit new_message manually: server will broadcast it
+      // socket broadcast will append it once
     } catch (err) {
       console.error(err);
     }
@@ -112,9 +99,7 @@ export default function MessageThread() {
                 <div
                   key={msg.id}
                   className={`mb-3 p-2 rounded ${
-                    isIncoming
-                      ? "bg-gray-200 text-left"
-                      : "bg-blue-200 text-right"
+                    isIncoming ? "bg-gray-200 text-left" : "bg-blue-200 text-right"
                   }`}
                 >
                   <div className="text-sm">
@@ -145,10 +130,7 @@ export default function MessageThread() {
             onChange={handleInput}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-          <button
-            className="btn btn-primary px-4 py-2"
-            onClick={handleSend}
-          >
+          <button className="btn btn-primary px-4 py-2" onClick={handleSend}>
             Send
           </button>
         </div>

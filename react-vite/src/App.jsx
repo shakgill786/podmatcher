@@ -1,3 +1,5 @@
+// react-vite/src/App.jsx
+
 import React, { useEffect, useState } from "react";
 import {
   Routes,
@@ -10,15 +12,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast, Toaster } from "react-hot-toast";
 
 import logo from "./assets/micmates-logo.png";
-import LandingHero   from "./components/LandingHero";
-import SignupForm    from "./components/Auth/SignupForm";
-import LoginForm     from "./components/Auth/LoginForm";
-import Dashboard     from "./components/Dashboard";
-import EditProfile   from "./components/Profile/EditProfile";
-import PublicProfile from "./components/Profile/PublicProfile";
-import Inbox         from "./components/Messages/Inbox";
-import MessageThread from "./components/Messages/MessageThread";
-import UserDirectory from "./components/Users/UserDirectory";
+import LandingHero    from "./components/LandingHero";
+import SignupForm     from "./components/Auth/SignupForm";
+import LoginForm      from "./components/Auth/LoginForm";
+import Dashboard      from "./components/Dashboard";
+import EditProfile    from "./components/Profile/EditProfile";
+import PublicProfile  from "./components/Profile/PublicProfile";
+import Inbox          from "./components/Messages/Inbox";
+import MessageThread  from "./components/Messages/MessageThread";
+import UserDirectory  from "./components/Users/UserDirectory";
+import MyMates        from "./components/Users/MyMates";
 
 import { thunkLogout, thunkAuthenticate } from "./store/sessionSlice";
 
@@ -64,6 +67,7 @@ export default function App() {
                 <Link to="/dashboard">Dashboard</Link>
                 <Link to="/users">Browse</Link>
                 <Link to="/inbox">Inbox</Link>
+                <Link to="/mates">My Mates</Link>
                 <button
                   className="btn btn-outline"
                   onClick={() => {
@@ -86,7 +90,7 @@ export default function App() {
       </header>
 
       {/* ─── Main Content ──────────────────── */}
-      <main>
+      <main className="flex-grow">
         <Routes>
           {/* root: show hero if not authed, otherwise dashboard */}
           <Route
@@ -113,13 +117,14 @@ export default function App() {
           />
 
           {/* protected */}
-          <Route path="/edit-profile"    element={user ? <EditProfile />   : <Navigate to="/login" />} />
-          <Route path="/users"           element={user ? <UserDirectory />: <Navigate to="/login" />} />
-          <Route path="/inbox"           element={user ? <Inbox />         : <Navigate to="/login" />} />
-          <Route path="/messages/:userId" element={user ? <MessageThread /> : <Navigate to="/login" />} />
+          <Route path="/edit-profile"      element={user ? <EditProfile />   : <Navigate to="/login" />} />
+          <Route path="/users"             element={user ? <UserDirectory /> : <Navigate to="/login" />} />
+          <Route path="/inbox"             element={user ? <Inbox />         : <Navigate to="/login" />} />
+          <Route path="/messages/:userId"  element={user ? <MessageThread /> : <Navigate to="/login" />} />
+          <Route path="/mates"             element={user ? <MyMates />       : <Navigate to="/login" />} />
 
           {/* public profile */}
-          <Route path="/profile/:userId" element={<PublicProfile />} />
+          <Route path="/profile/:userId"   element={<PublicProfile />} />
 
           {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

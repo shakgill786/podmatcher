@@ -1,3 +1,4 @@
+// react-vite/src/components/Profile/PublicProfile.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "../../store/axiosConfig";
@@ -22,81 +23,53 @@ export default function PublicProfile() {
     })();
   }, [userId]);
 
-  const sendMessage = async () => {
+  const toggleFollow = async () => {
     try {
-      await axios.post("/messages", {
-        recipient_id: profile.id,
-        body:         "👋 Hey there!",
+      const method = profile.is_following ? "delete" : "post";
+      const { data } = await axios[method](`/users/${userId}/follow`);
+      setProfile({
+        ...profile,
+        followers_count: data.followers_count,
+        is_following:    data.is_following
       });
-      navigate(`/messages/${userId}`);
+      toast.success(
+        profile.is_following 
+          ? "Unfollowed" 
+          : "Now following!"
+      );
     } catch {
-      toast.error("Failed to send message");
+      toast.error("Action failed");
     }
   };
 
-  if (loading) {
-    return (
-      <main className="hero">
-        <div className="hero-card">
-          <p className="text-center">Loading…</p>
-        </div>
-      </main>
-    );
-  }
-  if (!profile) {
-    return (
-      <main className="hero">
-        <div className="hero-card">
-          <p className="text-center text-red-600">User not found</p>
-        </div>
-      </main>
-    );
-  }
+  if (loading) return <p>Loading…</p>;
+  if (!profile) return <p className="text-red-600">User not found</p>;
 
   return (
     <main className="hero">
       <div className="hero-card lg:flex lg:space-x-8">
-        {/* Left: Info block */}
+        {/* … info block … */}
         <div className="flex-1 space-y-4">
           <h2 className="text-2xl font-bold text-indigo-600">
             🎧 {profile.username}'s Profile
           </h2>
-          <p><strong>Bio:</strong>       {profile.bio       || "—"}</p>
-          <p><strong>Interests:</strong> {profile.interests || "—"}</p>
-          <p><strong>Role:</strong>      {profile.role}</p>
-          <p><strong>Category:</strong>  {profile.category   || "—"}</p>
-
-          {profile.audio_url ? (
-            <div className="mt-4">
-              <label className="font-semibold">Intro Audio:</label>
-              <audio
-                controls
-                src={profile.audio_url}
-                className="w-full mt-2 rounded"
-              />
-            </div>
-          ) : (
-            <p className="italic text-gray-500">No intro audio yet.</p>
-          )}
-
+          <p><strong>Followers:</strong> {profile.followers_count}</p>
+          {/* … other fields … */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={sendMessage} className="btn btn-primary">
-              💬 Message
+            <button
+              onClick={toggleFollow}
+              className={`btn ${
+                profile.is_following ? "btn-outline" : "btn-primary"
+              }`}
+            >
+              {profile.is_following ? "Unfollow" : "Follow"}
             </button>
             <Link to="/dashboard" className="btn btn-outline">
               ← Back to Dashboard
             </Link>
           </div>
         </div>
-
-        {/* Right: profile‐specific wrapper & image */}
-        <div className="publicprofile-image-wrapper mt-6 lg:mt-0 lg:w-1/3">
-          <img
-            src="/landing-illustration.png"
-            alt="Podcasters chatting illustration"
-            className="publicprofile-image"
-          />
-        </div>
+        {/* … illustration … */}
       </div>
     </main>
   );

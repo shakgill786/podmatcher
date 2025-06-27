@@ -1,5 +1,3 @@
-# backend/app/api/messages_routes.py
-
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.models import db, Message, User
@@ -12,8 +10,8 @@ message_routes = Blueprint("messages", __name__)
 def get_thread(user_id):
     try:
         thread = Message.query.filter(
-            ((Message.sender_id    == current_user.id) & (Message.recipient_id == user_id)) |
-            ((Message.sender_id    == user_id)       & (Message.recipient_id == current_user.id))
+            ((Message.sender_id    == current_user.id)   & (Message.recipient_id == user_id)) |
+            ((Message.sender_id    == user_id)           & (Message.recipient_id == current_user.id))
         ).order_by(Message.created_at).all()
         return jsonify([m.to_dict() for m in thread]), 200
 
@@ -40,7 +38,7 @@ def post_message():
         db.session.add(msg)
         db.session.commit()
 
-        # Broadcast the new message to the recipient's room
+        # Broadcast new message to the recipient's room
         socketio.emit(
             "new_message",
             msg.to_dict(),
