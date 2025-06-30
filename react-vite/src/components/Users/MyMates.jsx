@@ -1,4 +1,5 @@
 // react-vite/src/components/Users/MyMates.jsx
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "../../store/axiosConfig";
@@ -9,7 +10,7 @@ export default function MyMates() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get("/users/me/follows");
+        const { data } = await axios.get("/users/me/mates");
         setMates(data);
       } catch (err) {
         console.error(err);
@@ -30,7 +31,9 @@ export default function MyMates() {
             {mates.map((u) => (
               <div key={u.id} className="card flex flex-col justify-between">
                 <h3 className="text-xl font-semibold">{u.username}</h3>
-                <p className="text-sm">{u.bio?.slice(0,80) || "No bio yet."}</p>
+                <p className="text-sm">
+                  {u.bio?.slice(0, 80) || "No bio yet."}
+                </p>
                 <Link to={`/profile/${u.id}`} className="btn btn-outline">
                   View Profile
                 </Link>

@@ -9,9 +9,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toast, Toaster } from "react-hot-toast";
+import { toast, Toaster }           from "react-hot-toast";
 
-import logo from "./assets/micmates-logo.png";
+import logo           from "./assets/micmates-logo.png";
 import LandingHero    from "./components/LandingHero";
 import SignupForm     from "./components/Auth/SignupForm";
 import LoginForm      from "./components/Auth/LoginForm";
@@ -38,10 +38,8 @@ export default function App() {
 
   if (!loaded) {
     return (
-      <div className="container" style={{ textAlign: "center" }}>
-        <p style={{ color: "var(--color-primary)", fontSize: "1.25rem" }}>
-          Loading…
-        </p>
+      <div className="container text-center">
+        <p className="text-primary text-lg">Loading…</p>
       </div>
     );
   }
@@ -50,7 +48,6 @@ export default function App() {
     <div className="flex flex-col min-h-screen">
       <Toaster position="top-center" />
 
-      {/* ─── Header ─────────────────────────── */}
       <header>
         <div className="inner">
           <Link to={user ? "/dashboard" : "/"} className="logo">
@@ -60,7 +57,6 @@ export default function App() {
               <p className="tagline">MICS MATED, MOMENTS CREATED</p>
             </div>
           </Link>
-
           <nav>
             {user ? (
               <>
@@ -89,10 +85,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* ─── Main Content ──────────────────── */}
       <main className="flex-grow">
         <Routes>
-          {/* root: show hero if not authed, otherwise dashboard */}
           <Route
             path="/"
             element={
@@ -102,11 +96,9 @@ export default function App() {
             }
           />
 
-          {/* public */}
           <Route path="/login"  element={<LoginForm />} />
           <Route path="/signup" element={<SignupForm />} />
 
-          {/* dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -116,22 +108,18 @@ export default function App() {
             }
           />
 
-          {/* protected */}
-          <Route path="/edit-profile"      element={user ? <EditProfile />   : <Navigate to="/login" />} />
-          <Route path="/users"             element={user ? <UserDirectory /> : <Navigate to="/login" />} />
-          <Route path="/inbox"             element={user ? <Inbox />         : <Navigate to="/login" />} />
-          <Route path="/messages/:userId"  element={user ? <MessageThread /> : <Navigate to="/login" />} />
-          <Route path="/mates"             element={user ? <MyMates />       : <Navigate to="/login" />} />
+          <Route path="/edit-profile"     element={user ? <EditProfile />   : <Navigate to="/login" />} />
+          <Route path="/users"            element={user ? <UserDirectory /> : <Navigate to="/login" />} />
+          <Route path="/inbox"            element={user ? <Inbox />         : <Navigate to="/login" />} />
+          <Route path="/messages/:userId" element={user ? <MessageThread /> : <Navigate to="/login" />} />
+          <Route path="/mates"            element={user ? <MyMates />       : <Navigate to="/login" />} />
 
-          {/* public profile */}
-          <Route path="/profile/:userId"   element={<PublicProfile />} />
+          <Route path="/profile/:userId" element={<PublicProfile />} />
 
-          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 
-      {/* ─── Footer ────────────────────────── */}
       <footer>
         <p>© {new Date().getFullYear()} MicMates</p>
       </footer>
