@@ -12,17 +12,22 @@ from app.models import db
 login_manager = LoginManager()
 csrf          = CSRFProtect()
 
-# SocketIO must live at module scope to avoid circular imports
+# SocketIO at module scope to avoid circular imports
 socketio = SocketIO(
-    cors_allowed_origins="http://localhost:5173",
+    cors_allowed_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     manage_session=False
 )
 
-# bind your event handlers
+# Bind your Socket.IO event handlers
 import app.socket_events  # noqa: F401
 
 def create_app():
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
+
     app.config.update(
         SECRET_KEY='super-secret-key',
         SQLALCHEMY_DATABASE_URI='sqlite:///dev.db',
@@ -56,12 +61,18 @@ def create_app():
         supports_credentials=True,
         resources={
             r"/api/*": {
-                "origins": ["http://localhost:5173"],
-                "methods": ["GET","POST","PUT","DELETE","OPTIONS"],
-                "allow_headers": ["Content-Type","X-CSRFToken"]
+                "origins": [
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173"
+                ],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "X-CSRFToken"]
             },
             r"/static/*": {
-                "origins": ["http://localhost:5173"]
+                "origins": [
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173"
+                ]
             }
         },
     )
@@ -79,6 +90,7 @@ def create_app():
     app.register_blueprint(message_routes, url_prefix="/api/messages")
     app.register_blueprint(audio_routes,   url_prefix="/api/audio")
     app.register_blueprint(csrf_routes,    url_prefix="/api")
+    # follow_routes also under /api/users
     app.register_blueprint(follow_routes,  url_prefix="/api/users")
 
     # ─── CLI seed commands ──────────────────────────────────────────

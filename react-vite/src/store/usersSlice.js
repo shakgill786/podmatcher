@@ -1,11 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import csrfFetch from "./csrf";
+import axios from "../store/axiosConfig";        // ← use axios, not csrfFetch
 
-export const getAllUsersThunk = createAsyncThunk("users/fetchAll", async () => {
-    const res = await csrfFetch("http://localhost:5000/api/users/");
-    const data = await res.json();
+export const getAllUsersThunk = createAsyncThunk(
+  "users/fetchAll",
+  async () => {
+    const { data } = await axios.get("/users");  // ← relative to baseURL
     return data;
-  });
+  }
+);
 
 const usersSlice = createSlice({
   name: "users",

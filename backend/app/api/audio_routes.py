@@ -12,42 +12,57 @@ audio_routes = Blueprint("audio", __name__)
 ALLOWED_EXTENSIONS = {"mp3", "wav", "m4a", "webm"}
 
 def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    )
 
 @audio_routes.route("/upload", methods=["POST"])
 @login_required
 def upload_audio():
-    file = request.files.get("file")
-    if not file or file.filename == "":
-        return jsonify({"error": "No file provided"}), 400
+    # 1) Make sure we got a file
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
 
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
     if not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type"}), 400
 
-    # build safe filename with timestamp
-    fname = secure_filename(f"user_{current_user.id}_{int(time.time())}_{file.filename}")
-    upload_folder = os.path.join(current_app.root_path, "static", "audio_snippets")
+    # 2) Build safe filename
+    filename = secure_filename(
+        f"user_{current_user.id}_{int(time.time())}_{file.filename}"
+    )
+    upload_folder = os.path.join(
+        current_app.root_path, "static", "audio_snippets"
+    )
     os.makedirs(upload_folder, exist_ok=True)
-    filepath = os.path.join(upload_folder, fname)
-    file.save(filepath)
+    filepath = os.path.join(upload_folder, filename)
 
-    # update user model
-    current_user.audio_file = fname
+    # 3) Save & commit to user
+    file.save(filepath)
+    current_user.audio_file = filename
     db.session.commit()
 
-    return jsonify({"filename": fname}), 200
+    return jsonify({"filename": filename}), 200
 
 @audio_routes.route("/upload", methods=["DELETE"])
 @login_required
 def delete_audio():
-    fname = current_user.audio_file
-    if not fname:
+    # 1) Nothing to delete?
+    if not current_user.audio_file:
         return jsonify({"error": "No snippet to delete"}), 404
 
-    path = os.path.join(current_app.root_path, "static", "audio_snippets", fname)
+    # 2) Remove file if it exists
+    path = os.path.join(
+        current_app.root_path, "static", "audio_snippets", current_user.audio_file
+    )
     if os.path.exists(path):
         os.remove(path)
 
+    # 3) Clear user record
     current_user.audio_file = None
     db.session.commit()
+
     return jsonify({"message": "Deleted"}), 200

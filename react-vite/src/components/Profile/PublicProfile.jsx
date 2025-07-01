@@ -10,7 +10,6 @@ export default function PublicProfile() {
   const [profile,  setProfile]  = useState(null);
   const [loading, setLoading]  = useState(true);
 
-  // Load profile (including is_following & followers_count)
   useEffect(() => {
     setLoading(true);
     axios.get(`/users/${userId}`)
@@ -19,28 +18,23 @@ export default function PublicProfile() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  // Toggle follow / unfollow
   const toggleFollow = async () => {
     if (!profile) return;
     const action = profile.is_following ? "unfollow" : "follow";
     const method = profile.is_following ? "delete"     : "post";
     try {
       const { data } = await axios[method](`/users/${userId}/${action}`);
-      // apply exactly what the server says
       setProfile(p => ({
         ...p,
         followers_count: data.followers_count,
         is_following:    data.is_following
       }));
-      toast.success(
-        data.is_following ? "Now following!" : "Unfollowed"
-      );
+      toast.success(data.is_following ? "Now following!" : "Unfollowed");
     } catch {
       toast.error("Action failed");
     }
   };
 
-  // Render states
   if (loading) return (
     <main className="hero">
       <div className="hero-card text-center">Loading…</div>
@@ -57,7 +51,7 @@ export default function PublicProfile() {
   return (
     <main className="hero">
       <div className="hero-card lg:flex lg:space-x-8">
-        {/* ─── Info ────────────────────────── */}
+        {/* ─── INFO BLOCK ────────────────────────────────── */}
         <div className="flex-1 space-y-4">
           <h2 className="text-2xl font-bold text-indigo-600">
             🎧 {profile.username}'s Profile
@@ -68,7 +62,23 @@ export default function PublicProfile() {
           <p><strong>Category:</strong>  {profile.category   || "—"}</p>
           <p><strong>Followers:</strong> {profile.followers_count}</p>
 
-          {/* only show on someone else’s profile */}
+          {/* ─── AUDIO SNIPPET ────────────────────────────── */}
+          {profile.audio_url ? (
+            <div className="mt-4">
+              <label className="font-semibold">Intro Audio:</label>
+              <audio
+                controls
+                src={profile.audio_url}
+                className="w-full mt-2 rounded"
+              />
+            </div>
+          ) : (
+            <p className="italic text-gray-500 mt-2">
+              No intro audio yet.
+            </p>
+          )}
+
+          {/* ─── FOLLOW BUTTON ───────────────────────────── */}
           {me?.id !== profile.id && (
             <button
               onClick={toggleFollow}
@@ -83,7 +93,7 @@ export default function PublicProfile() {
           </Link>
         </div>
 
-        {/* ─── Illustration ────────────────── */}
+        {/* ─── ILLUSTRATION ──────────────────────────────── */}
         <div className="publicprofile-image-wrapper mt-6 lg:mt-0 lg:w-1/3">
           <img
             src="/landing-illustration.png"
