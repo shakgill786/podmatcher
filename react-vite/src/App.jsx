@@ -9,9 +9,10 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toast, Toaster }           from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast";
+import io from "socket.io-client";
 
-import logo           from "./assets/micmates-logo.png";
+import logo from "./assets/micmates-logo.png";
 import LandingHero    from "./components/LandingHero";
 import SignupForm     from "./components/Auth/SignupForm";
 import LoginForm      from "./components/Auth/LoginForm";
@@ -23,18 +24,73 @@ import MessageThread  from "./components/Messages/MessageThread";
 import UserDirectory  from "./components/Users/UserDirectory";
 import MyMates        from "./components/Users/MyMates";
 
-import { thunkLogout, thunkAuthenticate } from "./store/sessionSlice";
+import axios from "./store/axiosConfig";
+import {
+  thunkAuthenticate,
+  thunkLogout,
+} from "./store/sessionSlice";
 
 export default function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user     = useSelector((s) => s.session.user);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded]             = useState(false);
+  const [globalUnread, setGlobalUnread] = useState(0);
 
-  // Restore session on mount
+  // 1️⃣ Restore session and fetch initial unread count
   useEffect(() => {
-    dispatch(thunkAuthenticate()).finally(() => setLoaded(true));
+    dispatch(thunkAuthenticate())
+      .then((action) => {
+        if (action.type === "session/authenticate/fulfilled" && action.payload) {
+          // only fetch unread if we’re logged in
+          return axios.get("/messages/unread_count")
+            .then(({ data }) => setGlobalUnread(data.unread_count))
+            .catch(() => {});
+        }
+      })
+      .finally(() => setLoaded(true));
   }, [dispatch]);
+
+  // 2️⃣ Open socket for new_message + unread_count + browser push
+  useEffect(() => {
+    if (!user) return;
+
+    // ask for permission
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const socket = io("http://localhost:5000", {
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      socket.emit("join", { room: String(user.id) });
+    });
+
+    socket.on("new_message", (msg) => {
+      // toast banner
+      toast.success(`New message from ${msg.from}`);
+      // optional desktop push
+      if (Notification.permission === "granted") {
+        new Notification(`MicMates: ${msg.from}`, {
+          body:
+            msg.body.length > 50
+              ? msg.body.slice(0, 50) + "…"
+              : msg.body,
+        });
+      }
+    });
+
+    socket.on("unread_count", ({ unread_count }) => {
+      // update header badge
+      setGlobalUnread(unread_count);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   if (!loaded) {
     return (
@@ -46,7 +102,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Toaster position="top-center" />
+      <Toaster position="top-right" />
 
       <header>
         <div className="inner">
@@ -62,7 +118,18 @@ export default function App() {
               <>
                 <Link to="/dashboard">Dashboard</Link>
                 <Link to="/users">Browse</Link>
-                <Link to="/inbox">Inbox</Link>
+                <Link to="/inbox" className="relative">
+                  Inbox
+                  {globalUnread > 0 && (
+                    <span className="
+                      absolute -top-2 -right-4
+                      bg-red-500 text-white text-xs
+                      px-1 rounded-full
+                    ">
+                      {globalUnread}
+                    </span>
+                  )}
+                </Link>
                 <Link to="/mates">My Mates</Link>
                 <button
                   className="btn btn-outline"
@@ -108,11 +175,46 @@ export default function App() {
             }
           />
 
-          <Route path="/edit-profile"     element={user ? <EditProfile />   : <Navigate to="/login" />} />
-          <Route path="/users"            element={user ? <UserDirectory /> : <Navigate to="/login" />} />
-          <Route path="/inbox"            element={user ? <Inbox />         : <Navigate to="/login" />} />
-          <Route path="/messages/:userId" element={user ? <MessageThread /> : <Navigate to="/login" />} />
-          <Route path="/mates"            element={user ? <MyMates />       : <Navigate to="/login" />} />
+          <Route
+            path="/edit-profile"
+            element={
+              user
+                ? <EditProfile />
+                : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              user
+                ? <UserDirectory />
+                : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/inbox"
+            element={
+              user
+                ? <Inbox />
+                : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/messages/:userId"
+            element={
+              user
+                ? <MessageThread />
+                : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/mates"
+            element={
+              user
+                ? <MyMates />
+                : <Navigate to="/login" replace />
+            }
+          />
 
           <Route path="/profile/:userId" element={<PublicProfile />} />
 

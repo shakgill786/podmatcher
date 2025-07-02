@@ -11,19 +11,19 @@ class Message(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     body         = db.Column(db.Text, nullable=False)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read      = db.Column(db.Boolean, default=False, nullable=False)
 
-    # relationships to pull usernames easily
     sender    = db.relationship('User', foreign_keys=[sender_id])
     recipient = db.relationship('User', foreign_keys=[recipient_id])
 
     def to_dict(self):
         return {
-            'id': self.id,
-            'sender_id': self.sender_id,
+            'id':           self.id,
+            'sender_id':    self.sender_id,
             'recipient_id': self.recipient_id,
-            'body': self.body,
-            'created_at': self.created_at.isoformat(),
-            # for your frontend convenience:
-            'from': self.sender.username,
-            'timestamp': self.created_at.isoformat()
+            'body':         self.body,
+            'created_at':   self.created_at.isoformat(),
+            'from':         self.sender.username,
+            'timestamp':    self.created_at.isoformat(),
+            'is_read':      self.is_read,
         }
